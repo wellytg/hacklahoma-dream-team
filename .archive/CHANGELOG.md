@@ -22,6 +22,17 @@ llm-dev guidance:
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-02-08
+**Conversation**: 003 - Intake flow expansion implementation
+**Transcript**: [20260208-intake-flow-expansion-implementation.json](transcripts/20260208-intake-flow-expansion-implementation.json)
+### Added
+- types.ts
+- IntakeContext.tsx
+- QuestionStep.tsx
+- IntakeFlow.tsx
+### Changed
+- Updated IntakeFlow.tsx
+
 ## [1.0.2] - 2026-02-07
 **Conversation**: 002 - Branch Management and Intake Expansion Planning
 **Transcript**: [20260207-branch-management-and-intake-expansion-planning.json](transcripts/20260207-branch-management-and-intake-expansion-planning.json)
