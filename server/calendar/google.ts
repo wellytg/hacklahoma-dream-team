@@ -40,9 +40,10 @@ export async function getValidAccessToken(
   db: Database,
   userId: string,
   cfEnv: CalendarEnv,
-): Promise<string> {
+): Promise<{ accessToken: string; email: string }> {
   const user = await db
     .select({
+      email: users.email,
       googleAccessToken: users.googleAccessToken,
       googleRefreshToken: users.googleRefreshToken,
       googleTokenExpiry: users.googleTokenExpiry,
@@ -58,7 +59,7 @@ export async function getValidAccessToken(
   // If token still valid (with 60s buffer), return it
   const now = Date.now()
   if (user.googleTokenExpiry && user.googleTokenExpiry > now + 60_000) {
-    return user.googleAccessToken
+    return { accessToken: user.googleAccessToken, email: user.email }
   }
 
   // Refresh
@@ -79,7 +80,7 @@ export async function getValidAccessToken(
       })
       .where(eq(users.id, userId))
 
-    return refreshed.access_token
+    return { accessToken: refreshed.access_token, email: user.email }
   } catch (err) {
     console.error('Token refresh failed for user', userId, err)
     throw new Error('Google token refresh failed — user may need to re-authenticate')

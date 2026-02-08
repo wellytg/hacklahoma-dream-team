@@ -157,7 +157,7 @@ export async function executeScheduleAction(
   const followUpDate = new Date(reflectionDate.getTime() + 2 * 3600_000) // 2h after reflection
 
   // Get a valid access token
-  const accessToken = await getValidAccessToken(db, userId, cfEnv)
+  const { accessToken, email } = await getValidAccessToken(db, userId, cfEnv)
 
   // Create action calendar event
   const calendarEvent = await createCalendarEvent(accessToken, {
@@ -203,7 +203,9 @@ export async function executeScheduleAction(
     scheduledAt: followUpDate.toISOString(),
   })
 
-  return { actionId, calendarEventId: calendarEvent.id, calendarHtmlLink: calendarEvent.htmlLink }
+  // Append authuser to force correct Google account when user has multiple accounts signed in
+  const htmlLink = `${calendarEvent.htmlLink}&authuser=${encodeURIComponent(email)}`
+  return { actionId, calendarEventId: calendarEvent.id, calendarHtmlLink: htmlLink }
 }
 
 /**
