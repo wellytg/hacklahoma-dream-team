@@ -50,7 +50,60 @@ export const startSession = createServerFn({ method: 'POST' })
         status: 'active',
       })
 
-      return { interactionId, actionId: data.actionId }
+      // Generate the agent's opening message
+      let greeting: { id: string; role: 'assistant'; content: string; createdAt: string } | null =
+        null
+      try {
+        const conversationMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+          { role: 'user', content: '[Session started]' },
+        ]
+
+        let responseText: string
+        if (data.mode === 'reflection' && data.actionId) {
+          const result = await runReflectionTurn(
+            db,
+            userId,
+            interactionId,
+            data.actionId,
+            conversationMessages,
+            { ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY },
+          )
+          responseText = result.text
+        } else {
+          const result = await runSenseiTurn(
+            db,
+            userId,
+            interactionId,
+            conversationMessages,
+            {
+              ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+              GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+              GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+            },
+            { allowScheduling: false },
+          )
+          responseText = result.text
+        }
+
+        const msgId = crypto.randomUUID()
+        await db.insert(messages).values({
+          id: msgId,
+          interactionId,
+          role: 'assistant',
+          content: responseText,
+        })
+
+        greeting = {
+          id: msgId,
+          role: 'assistant',
+          content: responseText,
+          createdAt: new Date().toISOString(),
+        }
+      } catch (err) {
+        console.error('Greeting generation error:', err)
+      }
+
+      return { interactionId, actionId: data.actionId, greeting }
     } catch (err) {
       if (err instanceof Response) throw err
       console.error('startSession error:', err)

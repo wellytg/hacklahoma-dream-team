@@ -70,13 +70,16 @@ function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
-  // Initialize session on mount
+  // Initialize session on mount and display agent greeting
   useEffect(() => {
     const init = async () => {
       try {
         const mode = isReflection ? 'reflection' : 'sensei_session'
         const result = await startSession({ data: { mode, actionId } })
         setInteractionId(result.interactionId)
+        if (result.greeting) {
+          setMsgs([result.greeting])
+        }
       } catch {
         console.error('Failed to start session')
       }
