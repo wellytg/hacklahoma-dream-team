@@ -1,5 +1,3 @@
-# sampleWellingtonFULLSPEC.md
-
 # hacklahoma-dream-team - Full Specification: Project Sensei
 
 ## Executive Summary
