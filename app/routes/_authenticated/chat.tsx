@@ -1,9 +1,12 @@
 import { createFileRoute, useSearch } from '@tanstack/react-router'
+import { formatDistanceToNow } from 'date-fns'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CalendarCheck, Loader2, Send } from 'lucide-react'
+import { CalendarCheck, Send } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Markdown from 'react-markdown'
 import { sendMessage, startSession } from '../../../server/routes/chat'
 import type { ChatMessage } from '../../../shared/types'
+import { TypingIndicator } from '../../components/TypingIndicator'
 
 interface ChatSearch {
   mode?: 'reflection'
@@ -17,6 +20,28 @@ export const Route = createFileRoute('/_authenticated/chat')({
     action: typeof search.action === 'string' ? search.action : undefined,
   }),
 })
+
+function formatTimestamp(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  if (diff < 60_000) return 'Just now'
+  return formatDistanceToNow(new Date(iso), { addSuffix: true })
+}
+
+const mdComponents = {
+  p: (props: React.ComponentProps<'p'>) => <p className="mb-2 last:mb-0" {...props} />,
+  strong: (props: React.ComponentProps<'strong'>) => (
+    <strong className="font-semibold text-stone-800" {...props} />
+  ),
+  ul: (props: React.ComponentProps<'ul'>) => (
+    <ul className="list-disc list-inside space-y-1 my-2" {...props} />
+  ),
+  ol: (props: React.ComponentProps<'ol'>) => (
+    <ol className="list-decimal list-inside space-y-1 my-2" {...props} />
+  ),
+  code: (props: React.ComponentProps<'code'>) => (
+    <code className="bg-stone-100 px-1.5 py-0.5 rounded text-xs font-mono" {...props} />
+  ),
+}
 
 function ChatPage() {
   const search = useSearch({ from: '/_authenticated/chat' })
@@ -103,7 +128,7 @@ function ChatPage() {
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="border-b border-stone-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-serif font-light text-stone-800">
               {isReflection ? 'Reflection' : 'Sensei'}
@@ -117,7 +142,7 @@ function ChatPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-6 py-8 space-y-4">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-4">
           {msgs.length === 0 && !loading && (
             <p className="text-stone-400 text-center py-12 font-light">
               {interactionId ? 'Send a message to begin.' : 'Starting session...'}
@@ -131,10 +156,10 @@ function ChatPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                  className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                     msg.role === 'user'
                       ? 'bg-stone-800 text-white'
                       : msg.role === 'system'
@@ -142,8 +167,15 @@ function ChatPage() {
                         : 'bg-white text-stone-700 border border-stone-200'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  {msg.role === 'user' ? (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  ) : (
+                    <Markdown components={mdComponents}>{msg.content}</Markdown>
+                  )}
                 </div>
+                <span className="text-xs text-stone-400 mt-1 px-1">
+                  {formatTimestamp(msg.createdAt)}
+                </span>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -165,18 +197,8 @@ function ChatPage() {
             ))}
           </AnimatePresence>
 
-          {/* Loading indicator */}
-          {loading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex justify-start"
-            >
-              <div className="bg-white border border-stone-200 rounded-2xl px-4 py-3">
-                <Loader2 className="w-4 h-4 animate-spin text-stone-400" />
-              </div>
-            </motion.div>
-          )}
+          {/* Typing indicator */}
+          {loading && <TypingIndicator />}
 
           <div ref={bottomRef} />
         </div>
@@ -184,7 +206,7 @@ function ChatPage() {
 
       {/* Input */}
       <div className="border-t border-stone-200 bg-white/80 backdrop-blur-sm sticky bottom-0">
-        <div className="max-w-3xl mx-auto px-6 py-4">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-end gap-3">
             <textarea
               ref={inputRef}

@@ -1,10 +1,22 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { formatDistanceToNow } from 'date-fns'
 import { motion } from 'framer-motion'
-import { Calendar, Clock, MessageCircle, RefreshCw } from 'lucide-react'
+import {
+  AlertCircle,
+  Calendar,
+  CalendarDays,
+  CheckCircle,
+  Clock,
+  ListChecks,
+  MessageCircle,
+  RefreshCw,
+  XCircle,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getScheduledActions } from '../../../server/routes/chat'
 import { getProfile } from '../../../server/routes/profile'
 import type { ScheduledAction } from '../../../shared/types'
+import { ActionCardSkeleton } from '../../components/ActionCardSkeleton'
 
 export const Route = createFileRoute('/_authenticated/dashboard')({
   component: DashboardPage,
@@ -44,18 +56,27 @@ function DashboardPage() {
     load()
   }, [])
 
-  const statusColor = (status: string | null) => {
+  const statusInfo = (status: string | null) => {
     switch (status) {
       case 'completed':
-        return 'text-emerald-600 bg-emerald-50'
+        return { color: 'text-emerald-600 bg-emerald-50', Icon: CheckCircle }
       case 'missed':
-        return 'text-amber-600 bg-amber-50'
+        return { color: 'text-amber-600 bg-amber-50', Icon: AlertCircle }
       case 'cancelled':
-        return 'text-stone-400 bg-stone-100'
+        return { color: 'text-stone-400 bg-stone-100', Icon: XCircle }
       default:
-        return 'text-blue-600 bg-blue-50'
+        return { color: 'text-blue-600 bg-blue-50', Icon: Clock }
     }
   }
+
+  const stats = !loadingActions
+    ? {
+        total: actions.length,
+        completed: actions.filter((a) => a.status === 'completed').length,
+        missed: actions.filter((a) => a.status === 'missed').length,
+        pending: actions.filter((a) => !a.status || a.status === 'pending').length,
+      }
+    : null
 
   if (checkingProfile) {
     return (
@@ -66,9 +87,11 @@ function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen py-12 px-6">
+    <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-serif font-light text-stone-800 mb-6">Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-serif font-light text-stone-800 mb-6">
+          Dashboard
+        </h1>
         <p className="text-stone-500 mb-8">Welcome back. Your journey continues here.</p>
 
         <div className="grid gap-4 mb-10">
@@ -99,6 +122,32 @@ function DashboardPage() {
           </Link>
         </div>
 
+        {/* Stat Cards */}
+        {stats && actions.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+            {[
+              { label: 'Total', value: stats.total, Icon: ListChecks, accent: 'text-stone-600' },
+              {
+                label: 'Completed',
+                value: stats.completed,
+                Icon: CheckCircle,
+                accent: 'text-emerald-600',
+              },
+              { label: 'Missed', value: stats.missed, Icon: AlertCircle, accent: 'text-amber-600' },
+              { label: 'Pending', value: stats.pending, Icon: Clock, accent: 'text-blue-600' },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="bg-white rounded-2xl border border-stone-200 p-4 flex flex-col items-center gap-1"
+              >
+                <stat.Icon className={`w-4 h-4 ${stat.accent}`} />
+                <span className="text-2xl font-serif font-light text-stone-800">{stat.value}</span>
+                <span className="text-xs text-stone-400">{stat.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Scheduled Actions */}
         <div>
           <h2 className="text-lg font-serif font-light text-stone-700 mb-4 flex items-center gap-2">
@@ -107,63 +156,90 @@ function DashboardPage() {
           </h2>
 
           {loadingActions ? (
-            <p className="text-stone-400 text-sm">Loading...</p>
+            <div className="space-y-3">
+              {[0, 1, 2].map((i) => (
+                <ActionCardSkeleton key={i} index={i} />
+              ))}
+            </div>
           ) : actions.length === 0 ? (
-            <p className="text-stone-400 text-sm font-light">
-              No scheduled actions yet. Talk to Sensei to get started.
-            </p>
+            <div className="bg-white rounded-2xl border border-stone-200 p-10 text-center">
+              <CalendarDays className="w-10 h-10 text-stone-300 mx-auto mb-3" />
+              <p className="text-stone-500 font-light mb-4">
+                No scheduled actions yet. Start a conversation to set your first goal.
+              </p>
+              <Link
+                to="/chat"
+                className="inline-flex items-center gap-2 bg-stone-800 text-white text-sm px-5 py-2.5 rounded-xl hover:bg-stone-700 transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Talk to Sensei
+              </Link>
+            </div>
           ) : (
             <div className="space-y-3">
-              {actions.map((action, i) => (
-                <motion.div
-                  key={action.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="bg-white rounded-2xl border border-stone-200 p-5"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-stone-800 text-sm">{action.title}</h3>
-                      {action.description && (
-                        <p className="text-stone-400 text-xs mt-1 line-clamp-2">
-                          {action.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-3 mt-2 text-xs text-stone-500">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(action.scheduledAt).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                        {action.goalArea && (
-                          <span className="text-stone-400">{action.goalArea}</span>
+              {actions.map((action, i) => {
+                const { color, Icon: StatusIcon } = statusInfo(action.status)
+                return (
+                  <motion.div
+                    key={action.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="bg-white rounded-2xl border border-stone-200 p-5"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-stone-800 text-sm">{action.title}</h3>
+                        {action.description && (
+                          <p className="text-stone-400 text-xs mt-1 line-clamp-2">
+                            {action.description}
+                          </p>
                         )}
+                        <div className="flex items-center gap-3 mt-2 text-xs text-stone-500">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(action.scheduledAt).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                          {action.goalArea && (
+                            <span className="text-stone-400">{action.goalArea}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${color}`}
+                        >
+                          <StatusIcon className="w-3 h-3" />
+                          {action.status ?? 'pending'}
+                        </span>
+                        {action.status === 'pending' &&
+                          action.reflectionScheduledAt &&
+                          (new Date(action.reflectionScheduledAt) <= new Date() ? (
+                            <Link
+                              to="/chat"
+                              search={{ mode: 'reflection', action: action.id }}
+                              className="text-xs bg-emerald-600 text-white px-3 py-1 rounded-full hover:bg-emerald-700 transition-colors"
+                            >
+                              Reflect now
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-stone-400">
+                              Reflect{' '}
+                              {formatDistanceToNow(new Date(action.reflectionScheduledAt), {
+                                addSuffix: true,
+                              })}
+                            </span>
+                          ))}
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(action.status)}`}
-                      >
-                        {action.status ?? 'pending'}
-                      </span>
-                      {action.status === 'pending' && action.reflectionScheduledAt && (
-                        <Link
-                          to="/chat"
-                          search={{ mode: 'reflection', action: action.id }}
-                          className="text-xs text-emerald-600 hover:text-emerald-700 underline"
-                        >
-                          Reflect
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                )
+              })}
             </div>
           )}
         </div>
