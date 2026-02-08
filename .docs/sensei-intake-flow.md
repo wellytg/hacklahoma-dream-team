@@ -448,6 +448,81 @@ After intake, the system generates:
 
 ---
 
+## Handling Conflicting Signals
+
+Students are complex and often give contradictory answers. The system must handle this gracefully.
+
+### **Conflict Resolution Priority**
+
+When student signals conflict:
+
+1. **Prioritize energy and avoidance signals over preference statements**
+   - What drains them (Q2) and what triggers avoidance (Q4) are behavioral truths
+   - What they say they prefer (Q3, Q5) may reflect aspirations, not reality
+   - Example: Says "I prefer structure" but avoidance is "I didn't choose this" → Offer structure with autonomy framing
+
+2. **Favor reversible, low-risk suggestions**
+   - Don't make big changes based on ambiguous data
+   - Start with safe, adaptable defaults
+   - Example: Uncertain about work burst length? Start with 25 minutes (Pomodoro standard), adjust based on observed completion
+
+3. **Test one hypothesis at a time**
+   - Don't change multiple variables simultaneously
+   - Isolate what's working from what isn't
+   - Example: Try "encouraging feedback style" for a week before also changing task chunk size
+
+4. **Observe response and adapt**
+   - Track engagement, completion, and satisfaction
+   - If student skips suggestions, that's data → adjust approach
+   - If student consistently extends 25-min blocks → increase default burst length
+
+### **Common Conflict Patterns**
+
+| Conflict | Resolution Strategy |
+|----------|---------------------|
+| "I want structure" + "Avoidance = didn't choose this" | Provide structure WITH autonomy language: "Here's a framework—pick your order" |
+| "Mental effort drains me" + "I learn by figuring it out" | Reduce cognitive load in setup, allow exploration within bounds |
+| "I need encouragement" + "Avoidance = perfectionism" | Encouraging + explicit "good enough" bars: "Great start! This is enough for now." |
+| "Low energy" + "Progress = meaningful day" | Micro-wins: "One tiny step = progress. That's a successful day." |
+| Skips energy questions + signals overwhelm | Default to conservative: short bursts, flexible timing, gentle pacing |
+
+### **Signal Hierarchy (Most to Least Reliable)**
+
+1. **Behavioral signals** (Q2: drains, Q4: avoidance, Step 5: accessibility)
+   - What actually happens in their life
+   - Harder to misreport or aspire to
+
+2. **Emotional signals** (Q6: wasted day feeling)
+   - What they care about deeply
+   - Reveals true values, not stated preferences
+
+3. **Preference statements** (Q3: capability builders, Q5: structure preference)
+   - May reflect ideals or past experiences
+   - Useful but verify with behavior
+
+4. **Optional modules** (Steps 3-5)
+   - Helpful context but not essential
+   - More likely to be skipped or uncertain
+
+### **Default Fallbacks**
+
+When signals are insufficient or contradictory:
+
+```javascript
+{
+  tone: "calm_guide",           // Safe, neutral
+  task_size: "small",            // Conservative
+  pacing: "gentle",              // Low pressure
+  feedback: "encouraging",       // Supportive default
+  structure: "light_scaffold",   // Some structure, not rigid
+  check_ins: "frequent_but_optional" // Build data without pressure
+}
+```
+
+**Philosophy:** When in doubt, **reduce friction and observe**. Better to under-support initially and add more than to overwhelm and lose trust.
+
+---
+
 ## Example Persona Paths
 
 ### **Path A: The Overwhelmed Perfectionist**
