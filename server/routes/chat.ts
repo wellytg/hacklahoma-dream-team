@@ -292,13 +292,16 @@ export const getActiveSession = createServerFn().handler(async () => {
 // getScheduledActions — for dashboard
 // ---------------------------------------------------------------------------
 
-import { scheduledActions } from '../db/schema'
+import { scheduledActions, users } from '../db/schema'
 
 export const getScheduledActions = createServerFn().handler(async () => {
   const userId = await requireUserId()
   const db = getDb(env.DB)
 
-  const actions = await db
+  // Fetch user email for constructing calendar links on legacy actions
+  const user = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).get()
+
+  const rows = await db
     .select({
       id: scheduledActions.id,
       title: scheduledActions.title,
@@ -309,11 +312,22 @@ export const getScheduledActions = createServerFn().handler(async () => {
       status: scheduledActions.status,
       reflectionScheduledAt: scheduledActions.reflectionScheduledAt,
       calendarHtmlLink: scheduledActions.calendarHtmlLink,
+      calendarEventId: scheduledActions.calendarEventId,
     })
     .from(scheduledActions)
     .where(eq(scheduledActions.userId, userId))
     .orderBy(desc(scheduledActions.createdAt))
     .limit(10)
+
+  // Backfill calendarHtmlLink for actions created before we stored it
+  const actions = rows.map(({ calendarEventId, ...rest }) => ({
+    ...rest,
+    calendarHtmlLink:
+      rest.calendarHtmlLink ??
+      (calendarEventId && user?.email
+        ? `https://www.google.com/calendar/event?eid=${btoa(`${calendarEventId} ${user.email}`)}&authuser=${encodeURIComponent(user.email)}`
+        : null),
+  }))
 
   return { actions }
 })
