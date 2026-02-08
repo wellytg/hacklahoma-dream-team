@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckCircle2 } from 'lucide-react'
@@ -11,7 +11,7 @@ interface Question {
   id: number
   question: string
   subtitle?: string
-  type: 'text' | 'select' | 'multiselect' | 'textarea'
+  type: 'text' | 'number' | 'select' | 'multiselect' | 'textarea'
   options?: string[]
   placeholder?: string
 }
@@ -25,19 +25,25 @@ const questions: Question[] = [
   },
   {
     id: 2,
+    question: "How old are you?",
+    type: 'number',
+    placeholder: 'Enter your age',
+  },
+  {
+    id: 3,
     question: "Which best describes you right now?",
     type: 'select',
     options: ['Student', 'Working Professional', 'Other'],
   },
   {
-    id: 3,
+    id: 4,
     question: "Tell me a bit about your typical day.",
     subtitle: "You can answer briefly:\n• When do you usually start your day?\n• When does your main work or classes end?",
     type: 'textarea',
     placeholder: 'No worries — even an approximate schedule is perfect.',
   },
   {
-    id: 4,
+    id: 5,
     question: "What's the biggest challenge you're facing right now?",
     subtitle: 'You can choose one or more:',
     type: 'multiselect',
@@ -63,16 +69,35 @@ export default function QuestionScreen() {
   const question = questions.find(q => q.id === questionId)
 
   const [textAnswer, setTextAnswer] = useState('')
+  const [userName, setUserName] = useState('')
   const [selectedOption, setSelectedOption] = useState<string>('')
   const [selectedOptions, setSelectedOptions] = useState<Set<string>>(new Set())
+
+  // Load user's name from localStorage for personalized greeting
+  useEffect(() => {
+    const storedName = localStorage.getItem('sensei_user_name')
+    if (storedName) {
+      setUserName(storedName)
+    }
+  }, [questionId])
 
   if (!question) {
     return null
   }
 
   const handleContinue = () => {
+    // Store user's name from Question 1
+    if (questionId === 1 && textAnswer.trim()) {
+      localStorage.setItem('sensei_user_name', textAnswer.trim())
+    }
+
+    // Store user's age from Question 2
+    if (questionId === 2 && textAnswer.trim()) {
+      localStorage.setItem('sensei_user_age', textAnswer.trim())
+    }
+
     // Store answer (you can expand this with context/state management)
-    if (questionId < 4) {
+    if (questionId < 5) {
       navigate(`/onboarding/question/${questionId + 1}`)
     } else {
       // Navigate to summary or dashboard
@@ -91,7 +116,7 @@ export default function QuestionScreen() {
   }
 
   const isAnswered = () => {
-    if (question.type === 'text' || question.type === 'textarea') {
+    if (question.type === 'text' || question.type === 'textarea' || question.type === 'number') {
       return textAnswer.trim().length > 0
     }
     if (question.type === 'select') {
@@ -116,7 +141,7 @@ export default function QuestionScreen() {
   }
 
   return (
-    <OnboardingLayout currentStep={questionId} totalSteps={4}>
+    <OnboardingLayout currentStep={questionId} totalSteps={5}>
       <Card variant="elevated" className="p-8 md:p-12 bg-white/95 backdrop-blur-sm">
         <motion.div
           initial="hidden"
@@ -129,13 +154,30 @@ export default function QuestionScreen() {
             },
           }}
         >
-          {/* Question heading */}
-          <motion.h2
-            className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 text-balance"
-            variants={itemVariants}
-          >
-            {question.question}
-          </motion.h2>
+          {/* Question heading with personalized greeting for Q3 */}
+          {questionId === 3 && userName ? (
+            <>
+              <motion.h2
+                className="text-3xl md:text-4xl font-bold text-primary-600 mb-3 text-balance"
+                variants={itemVariants}
+              >
+                Thanks, {userName}! 🙂
+              </motion.h2>
+              <motion.h3
+                className="text-2xl md:text-3xl font-semibold text-gray-900 mb-4 text-balance"
+                variants={itemVariants}
+              >
+                {question.question}
+              </motion.h3>
+            </>
+          ) : (
+            <motion.h2
+              className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 text-balance"
+              variants={itemVariants}
+            >
+              {question.question}
+            </motion.h2>
+          )}
 
           {/* Subtitle if present */}
           {question.subtitle && (
@@ -156,6 +198,20 @@ export default function QuestionScreen() {
                 value={textAnswer}
                 onChange={(e) => setTextAnswer(e.target.value)}
                 placeholder={question.placeholder}
+                className="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-xl focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-200 transition-all"
+                autoFocus
+              />
+            )}
+
+            {/* Number input for age */}
+            {question.type === 'number' && (
+              <input
+                type="number"
+                value={textAnswer}
+                onChange={(e) => setTextAnswer(e.target.value)}
+                placeholder={question.placeholder}
+                min="13"
+                max="120"
                 className="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-xl focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-200 transition-all"
                 autoFocus
               />
