@@ -11,7 +11,7 @@
   - 30-second reels provide instant dopamine hits
   - After consuming short-form content, sustained focus on real tasks becomes much harder
   - Creates a cycle: the more short content you consume, the less capable you become of extended focus
-- Zia strongly agrees — using social media for even 30 minutes to an hour "messes you up" for focused work afterward
+- Mouzam strongly agrees — using social media for even 30 minutes to an hour "messes you up" for focused work afterward
 
 ### B. Personal Focus Strategies (Group Discussion)
 - The team discusses what they each do to "lock in":
@@ -33,7 +33,7 @@
   4. Help the user "clean up" mentally — address lingering worries or tasks before deep work begins
 - Key insight: **focus isn't just about the session itself — it's about building a lifestyle that supports deep work**
 
-### B. Zia Builds on the Idea
+### B. Mouzam Builds on the Idea
 - Suggests the app send "precautionary measures" 1-2 hours before a focus session
 - Example: "Your study session starts at 5 PM — avoid social media and distracting activities to prepare"
 - This pre-session guidance could be integrated into the scheduling/calendar feature
@@ -81,7 +81,7 @@
   - If a user engages with check-ins, that signals they're finding value in the app
   - Each check-in goes a little deeper
 
-### C. Zia's Addition: Optional Deep Personalization
+### C. Mouzam's Addition: Optional Deep Personalization
 - Agrees onboarding should be easy and quick
 - Suggests offering an **optional survey/assessment** within the app (not part of onboarding)
 - Framing: "If you want better suggestions from us, you can take this optional assessment"
