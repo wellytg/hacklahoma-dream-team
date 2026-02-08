@@ -1,9 +1,10 @@
-import { createFileRoute, useSearch } from '@tanstack/react-router'
+import { createFileRoute, Link, useSearch } from '@tanstack/react-router'
 import { formatDistanceToNow } from 'date-fns'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CalendarCheck, Send } from 'lucide-react'
+import { ArrowLeft, CalendarCheck, LogOut, Send } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
+import { useAuth } from '~/context/AuthContext'
 import { sendMessage, startSession } from '../../../server/routes/chat'
 import type { ChatMessage } from '../../../shared/types'
 import { TypingIndicator } from '../../components/TypingIndicator'
@@ -43,8 +44,15 @@ const mdComponents = {
   ),
 }
 
+interface ScheduledActionUI {
+  actionId: string
+  title: string
+  calendarEventId?: string
+}
+
 function ChatPage() {
   const search = useSearch({ from: '/_authenticated/chat' })
+  const { logout } = useAuth()
   const isReflection = search.mode === 'reflection'
   const actionId = search.action
 
@@ -52,9 +60,7 @@ function ChatPage() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [interactionId, setInteractionId] = useState<string | null>(null)
-  const [scheduledActions, setScheduledActions] = useState<
-    Array<{ actionId: string; title: string }>
-  >([])
+  const [scheduledActions, setScheduledActions] = useState<ScheduledActionUI[]>([])
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -99,7 +105,13 @@ function ChatPage() {
       setMsgs((prev) => [...prev, result.message])
 
       if (result.actions && result.actions.length > 0) {
-        setScheduledActions((prev) => [...prev, ...result.actions])
+        setScheduledActions((prev) => {
+          const existing = new Set(prev.map((a) => a.actionId))
+          const newActions = result.actions.filter(
+            (a: ScheduledActionUI) => !existing.has(a.actionId),
+          )
+          return [...prev, ...newActions]
+        })
       }
     } catch {
       setMsgs((prev) => [
@@ -129,14 +141,30 @@ function ChatPage() {
       {/* Header */}
       <header className="border-b border-stone-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-serif font-light text-stone-800">
-              {isReflection ? 'Reflection' : 'Sensei'}
-            </h1>
-            {isReflection && (
-              <p className="text-xs text-stone-400 mt-0.5">Reflecting on your action</p>
-            )}
+          <div className="flex items-center gap-3">
+            <Link
+              to="/dashboard"
+              className="p-1.5 -ml-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div>
+              <h1 className="text-xl font-serif font-light text-stone-800">
+                {isReflection ? 'Reflection' : 'Sensei'}
+              </h1>
+              {isReflection && (
+                <p className="text-xs text-stone-400 mt-0.5">Reflecting on your action</p>
+              )}
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={logout}
+            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+            title="Log out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </header>
 
@@ -189,10 +217,22 @@ function ChatPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex justify-start"
               >
-                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl px-4 py-3 text-sm">
-                  <CalendarCheck className="w-4 h-4 shrink-0" />
-                  <span>Scheduled: {action.title}</span>
-                </div>
+                {action.calendarEventId ? (
+                  <a
+                    href={`https://calendar.google.com/calendar/event?eid=${btoa(`${action.calendarEventId} `)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl px-4 py-3 text-sm hover:bg-emerald-100 transition-colors"
+                  >
+                    <CalendarCheck className="w-4 h-4 shrink-0" />
+                    <span>Scheduled: {action.title}</span>
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl px-4 py-3 text-sm">
+                    <CalendarCheck className="w-4 h-4 shrink-0" />
+                    <span>Scheduled: {action.title}</span>
+                  </div>
+                )}
               </motion.div>
             ))}
           </AnimatePresence>

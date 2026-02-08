@@ -112,7 +112,7 @@ interface AgentEnv {
 
 export interface SenseiResult {
   text: string
-  actions: Array<{ actionId: string; title: string }>
+  actions: Array<{ actionId: string; title: string; calendarEventId: string }>
 }
 
 /**
@@ -137,7 +137,7 @@ export async function runSenseiTurn(
     ? `${SENSEI_SYSTEM_PROMPT}\n\n---\n\n# USER CONTEXT\n\n${context}`
     : SENSEI_SYSTEM_PROMPT
 
-  const actions: Array<{ actionId: string; title: string }> = []
+  const actions: Array<{ actionId: string; title: string; calendarEventId: string }> = []
 
   // Build the messages array for Claude
   let claudeMessages: Anthropic.MessageParam[] = conversationMessages.map((m) => ({
@@ -190,6 +190,7 @@ export async function runSenseiTurn(
           actions.push({
             actionId: result.actionId,
             title: (toolBlock.input as { title: string }).title,
+            calendarEventId: result.calendarEventId,
           })
           toolResults.push({
             type: 'tool_result',

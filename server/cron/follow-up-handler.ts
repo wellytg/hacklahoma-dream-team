@@ -61,11 +61,20 @@ export async function processFollowUpChecks(env: Cloudflare.Env): Promise<void> 
           .where(eq(userProfiles.userId, check.userId))
           .get(),
         db
-          .select({ title: scheduledActions.title, goalArea: scheduledActions.goalArea })
+          .select({
+            title: scheduledActions.title,
+            goalArea: scheduledActions.goalArea,
+            scheduledAt: scheduledActions.scheduledAt,
+          })
           .from(scheduledActions)
           .where(eq(scheduledActions.id, check.actionId))
           .get(),
       ])
+
+      // Don't mark as missed if the action hasn't happened yet
+      if (action?.scheduledAt && new Date(action.scheduledAt) > new Date()) {
+        continue
+      }
 
       const tolerance = profile?.notificationTolerance ?? 'medium'
       const nudgePref = profile?.nudgePreference ?? 'passive'

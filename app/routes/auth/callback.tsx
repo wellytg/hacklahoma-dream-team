@@ -6,7 +6,7 @@
  * redirect based on profile state.
  */
 
-import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
+import { createFileRoute, useSearch } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { handleAuthCallback } from '../../../server/routes/auth'
 import { getProfile } from '../../../server/routes/profile'
@@ -26,7 +26,6 @@ export const Route = createFileRoute('/auth/callback')({
 
 function CallbackPage() {
   const { code, error } = useSearch({ from: '/auth/callback' })
-  const navigate = useNavigate()
   const [status, setStatus] = useState<'processing' | 'error'>('processing')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -45,18 +44,12 @@ function CallbackPage() {
 
     handleAuthCallback({ data: { code } })
       .then(async () => {
-        // Session cookie is set by the server response.
-        // Check profile to decide where to send the user.
+        // Full page reload so AuthProvider re-checks the new session cookie
         try {
           const { profile } = await getProfile()
-          if (profile?.intakeCompletedAt) {
-            navigate({ to: '/dashboard' })
-          } else {
-            navigate({ to: '/intake' })
-          }
+          window.location.href = profile?.intakeCompletedAt ? '/dashboard' : '/intake'
         } catch {
-          // Profile check failed — default to intake
-          navigate({ to: '/intake' })
+          window.location.href = '/intake'
         }
       })
       .catch((err: unknown) => {
@@ -64,7 +57,7 @@ function CallbackPage() {
         setStatus('error')
         setErrorMessage('Login failed. Please try again.')
       })
-  }, [code, error, navigate])
+  }, [code, error])
 
   if (status === 'error') {
     return (

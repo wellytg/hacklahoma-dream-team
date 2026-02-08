@@ -8,12 +8,15 @@ import {
   CheckCircle,
   Clock,
   ListChecks,
+  LogOut,
   MessageCircle,
-  RefreshCw,
+  Trash2,
+  User,
   XCircle,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { getScheduledActions } from '../../../server/routes/chat'
+import { useAuth } from '~/context/AuthContext'
+import { deleteScheduledAction, getScheduledActions } from '../../../server/routes/chat'
 import { getProfile } from '../../../server/routes/profile'
 import type { ScheduledAction } from '../../../shared/types'
 import { ActionCardSkeleton } from '../../components/ActionCardSkeleton'
@@ -24,6 +27,7 @@ export const Route = createFileRoute('/_authenticated/dashboard')({
 
 function DashboardPage() {
   const navigate = useNavigate()
+  const { logout } = useAuth()
   const [actions, setActions] = useState<ScheduledAction[]>([])
   const [loadingActions, setLoadingActions] = useState(true)
   const [checkingProfile, setCheckingProfile] = useState(true)
@@ -89,9 +93,17 @@ function DashboardPage() {
   return (
     <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl font-serif font-light text-stone-800 mb-6">
-          Dashboard
-        </h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl sm:text-3xl font-serif font-light text-stone-800">Dashboard</h1>
+          <button
+            type="button"
+            onClick={logout}
+            className="p-2 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+            title="Log out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
         <p className="text-stone-500 mb-8">Welcome back. Your journey continues here.</p>
 
         <div className="grid gap-4 mb-10">
@@ -109,15 +121,15 @@ function DashboardPage() {
           </Link>
 
           <Link
-            to="/intake"
+            to="/profile"
             className="block p-6 bg-white rounded-2xl border border-stone-200 hover:border-stone-300 hover:shadow-md transition-all"
           >
             <div className="flex items-center gap-3 mb-1">
-              <RefreshCw className="w-5 h-5 text-stone-600" />
-              <h3 className="font-medium text-stone-800">Retake Intake</h3>
+              <User className="w-5 h-5 text-stone-600" />
+              <h3 className="font-medium text-stone-800">Your Profile</h3>
             </div>
             <p className="text-stone-400 text-sm font-light ml-8">
-              Update your preferences and profile.
+              View your preferences and conversation style.
             </p>
           </Link>
         </div>
@@ -211,12 +223,29 @@ function DashboardPage() {
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${color}`}
-                        >
-                          <StatusIcon className="w-3 h-3" />
-                          {action.status ?? 'pending'}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${color}`}
+                          >
+                            <StatusIcon className="w-3 h-3" />
+                            {action.status ?? 'pending'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await deleteScheduledAction({ data: { actionId: action.id } })
+                                setActions((prev) => prev.filter((a) => a.id !== action.id))
+                              } catch {
+                                // Silently fail — action may already be deleted
+                              }
+                            }}
+                            className="p-1 rounded text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            title="Delete action"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                         {action.status === 'pending' &&
                           action.reflectionScheduledAt &&
                           (new Date(action.reflectionScheduledAt) <= new Date() ? (

@@ -13,7 +13,7 @@ import { runReflectionTurn } from '../agents/reflection'
 import { runSenseiTurn } from '../agents/sensei'
 import { validateSession } from '../auth/session'
 import { getDb } from '../db/index'
-import { interactions, messages } from '../db/schema'
+import { followUpChecks, interactions, messages } from '../db/schema'
 
 const SESSION_COOKIE = 'sensei_session'
 
@@ -247,6 +247,7 @@ export const getScheduledActions = createServerFn().handler(async () => {
       goalArea: scheduledActions.goalArea,
       status: scheduledActions.status,
       reflectionScheduledAt: scheduledActions.reflectionScheduledAt,
+      calendarEventId: scheduledActions.calendarEventId,
     })
     .from(scheduledActions)
     .where(eq(scheduledActions.userId, userId))
@@ -255,3 +256,31 @@ export const getScheduledActions = createServerFn().handler(async () => {
 
   return { actions }
 })
+
+// ---------------------------------------------------------------------------
+// deleteScheduledAction
+// ---------------------------------------------------------------------------
+
+export const deleteScheduledAction = createServerFn({ method: 'POST' })
+  .inputValidator((data: { actionId: string }) => data)
+  .handler(async ({ data }) => {
+    const userId = await requireUserId()
+    const db = getDb(env.DB)
+
+    // Verify ownership
+    const action = await db
+      .select({ id: scheduledActions.id })
+      .from(scheduledActions)
+      .where(and(eq(scheduledActions.id, data.actionId), eq(scheduledActions.userId, userId)))
+      .get()
+
+    if (!action) {
+      throw new Response('Not found', { status: 404 })
+    }
+
+    // Delete related follow-up checks first, then the action
+    await db.delete(followUpChecks).where(eq(followUpChecks.actionId, data.actionId))
+    await db.delete(scheduledActions).where(eq(scheduledActions.id, data.actionId))
+
+    return { success: true }
+  })
