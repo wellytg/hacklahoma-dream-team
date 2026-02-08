@@ -12,8 +12,9 @@ import { and, desc, eq } from 'drizzle-orm'
 import { runReflectionTurn } from '../agents/reflection'
 import { runSenseiTurn } from '../agents/sensei'
 import { validateSession } from '../auth/session'
+import { deleteCalendarEvent, getValidAccessToken, updateCalendarEvent } from '../calendar/google'
 import { getDb } from '../db/index'
-import { interactions, messages } from '../db/schema'
+import { followUpChecks, interactions, messages } from '../db/schema'
 
 const SESSION_COOKIE = 'sensei_session'
 
@@ -50,7 +51,60 @@ export const startSession = createServerFn({ method: 'POST' })
         status: 'active',
       })
 
-      return { interactionId, actionId: data.actionId }
+      // Generate the agent's opening message
+      let greeting: { id: string; role: 'assistant'; content: string; createdAt: string } | null =
+        null
+      try {
+        const conversationMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+          { role: 'user', content: '[Session started]' },
+        ]
+
+        let responseText: string
+        if (data.mode === 'reflection' && data.actionId) {
+          const result = await runReflectionTurn(
+            db,
+            userId,
+            interactionId,
+            data.actionId,
+            conversationMessages,
+            { ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY },
+          )
+          responseText = result.text
+        } else {
+          const result = await runSenseiTurn(
+            db,
+            userId,
+            interactionId,
+            conversationMessages,
+            {
+              ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+              GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+              GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+            },
+            { allowScheduling: false },
+          )
+          responseText = result.text
+        }
+
+        const msgId = crypto.randomUUID()
+        await db.insert(messages).values({
+          id: msgId,
+          interactionId,
+          role: 'assistant',
+          content: responseText,
+        })
+
+        greeting = {
+          id: msgId,
+          role: 'assistant',
+          content: responseText,
+          createdAt: new Date().toISOString(),
+        }
+      } catch (err) {
+        console.error('Greeting generation error:', err)
+      }
+
+      return { interactionId, actionId: data.actionId, greeting }
     } catch (err) {
       if (err instanceof Response) throw err
       console.error('startSession error:', err)
@@ -104,7 +158,7 @@ export const sendMessage = createServerFn({ method: 'POST' })
 
     // Call the appropriate agent (with graceful fallback on API errors)
     let responseText: string
-    let actions: Array<{ actionId: string; title: string }> = []
+    let actions: Array<{ actionId: string; title: string; calendarHtmlLink?: string }> = []
 
     try {
       if (interaction.type === 'reflection' && data.actionId) {
@@ -125,11 +179,18 @@ export const sendMessage = createServerFn({ method: 'POST' })
             .where(eq(interactions.id, data.interactionId))
         }
       } else {
-        const result = await runSenseiTurn(db, userId, data.interactionId, conversationMessages, {
-          ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
-          GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
-          GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
-        })
+        const result = await runSenseiTurn(
+          db,
+          userId,
+          data.interactionId,
+          conversationMessages,
+          {
+            ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+            GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+            GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+          },
+          { allowScheduling: interaction.status !== 'completed' },
+        )
         responseText = result.text
         actions = result.actions
 
@@ -247,6 +308,7 @@ export const getScheduledActions = createServerFn().handler(async () => {
       goalArea: scheduledActions.goalArea,
       status: scheduledActions.status,
       reflectionScheduledAt: scheduledActions.reflectionScheduledAt,
+      calendarEventId: scheduledActions.calendarEventId,
     })
     .from(scheduledActions)
     .where(eq(scheduledActions.userId, userId))
@@ -255,3 +317,127 @@ export const getScheduledActions = createServerFn().handler(async () => {
 
   return { actions }
 })
+
+// ---------------------------------------------------------------------------
+// deleteScheduledAction
+// ---------------------------------------------------------------------------
+
+export const deleteScheduledAction = createServerFn({ method: 'POST' })
+  .inputValidator((data: { actionId: string }) => data)
+  .handler(async ({ data }) => {
+    const userId = await requireUserId()
+    const db = getDb(env.DB)
+
+    // Verify ownership and fetch calendar event IDs
+    const action = await db
+      .select({
+        id: scheduledActions.id,
+        calendarEventId: scheduledActions.calendarEventId,
+        reflectionEventId: scheduledActions.reflectionEventId,
+      })
+      .from(scheduledActions)
+      .where(and(eq(scheduledActions.id, data.actionId), eq(scheduledActions.userId, userId)))
+      .get()
+
+    if (!action) {
+      throw new Response('Not found', { status: 404 })
+    }
+
+    // Best-effort: delete Google Calendar events
+    try {
+      const { accessToken } = await getValidAccessToken(db, userId, {
+        GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+      })
+      if (action.calendarEventId) {
+        await deleteCalendarEvent(accessToken, action.calendarEventId)
+      }
+      if (action.reflectionEventId) {
+        await deleteCalendarEvent(accessToken, action.reflectionEventId)
+      }
+    } catch (err) {
+      console.error('Calendar event deletion failed (non-fatal):', err)
+    }
+
+    // Delete related follow-up checks first, then the action
+    await db.delete(followUpChecks).where(eq(followUpChecks.actionId, data.actionId))
+    await db.delete(scheduledActions).where(eq(scheduledActions.id, data.actionId))
+
+    return { success: true }
+  })
+
+// ---------------------------------------------------------------------------
+// updateScheduledAction — reschedule a pending action
+// ---------------------------------------------------------------------------
+
+export const updateScheduledAction = createServerFn({ method: 'POST' })
+  .inputValidator((data: { actionId: string; scheduledAt: string }) => data)
+  .handler(async ({ data }) => {
+    const userId = await requireUserId()
+    const db = getDb(env.DB)
+
+    // Verify ownership + pending status
+    const action = await db
+      .select()
+      .from(scheduledActions)
+      .where(and(eq(scheduledActions.id, data.actionId), eq(scheduledActions.userId, userId)))
+      .get()
+
+    if (!action) {
+      throw new Response('Not found', { status: 404 })
+    }
+    if (action.status && action.status !== 'pending') {
+      throw new Response('Only pending actions can be rescheduled', { status: 400 })
+    }
+
+    const duration = action.durationMinutes ?? 30
+    const startDate = new Date(data.scheduledAt)
+    const endDate = new Date(startDate.getTime() + duration * 60_000)
+    const reflectionDate = new Date(endDate.getTime() + 12 * 3600_000)
+    const followUpDate = new Date(reflectionDate.getTime() + 2 * 3600_000)
+
+    // Best-effort: update Google Calendar events
+    try {
+      const { accessToken } = await getValidAccessToken(db, userId, {
+        GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+      })
+      if (action.calendarEventId) {
+        await updateCalendarEvent(accessToken, action.calendarEventId, {
+          startDateTime: startDate.toISOString(),
+          endDateTime: endDate.toISOString(),
+        })
+      }
+      if (action.reflectionEventId) {
+        const reflectionEnd = new Date(reflectionDate.getTime() + 15 * 60_000)
+        await updateCalendarEvent(accessToken, action.reflectionEventId, {
+          startDateTime: reflectionDate.toISOString(),
+          endDateTime: reflectionEnd.toISOString(),
+        })
+      }
+    } catch (err) {
+      console.error('Calendar event update failed (non-fatal):', err)
+    }
+
+    // Update DB: scheduled_actions
+    await db
+      .update(scheduledActions)
+      .set({
+        scheduledAt: startDate.toISOString(),
+        reflectionScheduledAt: reflectionDate.toISOString(),
+        followUpScheduledAt: followUpDate.toISOString(),
+      })
+      .where(eq(scheduledActions.id, data.actionId))
+
+    // Update DB: follow_up_checks
+    await db
+      .update(followUpChecks)
+      .set({ scheduledAt: followUpDate.toISOString() })
+      .where(eq(followUpChecks.actionId, data.actionId))
+
+    return {
+      success: true,
+      scheduledAt: startDate.toISOString(),
+      reflectionScheduledAt: reflectionDate.toISOString(),
+    }
+  })

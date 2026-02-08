@@ -10,9 +10,10 @@ enabled = true
 binding = "DB"
 database_name = "sensei-db"
 database_id = "2a6cd076-d9ac-4f0f-ac78-f241b44b3656"
+migrations_dir = "server/db/migrations"
 
 [vars]
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
 
 # Secrets (set via `wrangler secret put`):
 # GOOGLE_CLIENT_ID

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 export function TypingIndicator() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-      <div className="bg-white border border-stone-200 rounded-2xl px-4 py-3 flex items-center gap-2">
+      <div className="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl px-4 py-3 flex items-center gap-2">
         <span className="text-xs text-stone-400">Sensei is thinking</span>
         <span className="flex gap-0.5">
           {[0, 1, 2].map((i) => (

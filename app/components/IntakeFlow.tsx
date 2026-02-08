@@ -19,102 +19,9 @@ import type React from 'react'
 import { useState } from 'react'
 import { useIntake } from '~/context/IntakeContext'
 import { saveProfile } from '../../server/routes/profile'
+import { label } from '../../shared/resolve'
 import { ProgressBar } from './ProgressBar'
 import { OptionButton, QuestionStep } from './QuestionStep'
-
-// --- Helper: human-readable labels for resolved values ---
-
-const LABEL: Record<string, string> = {
-  // Friction strategies
-  reduce_cognitive_load: 'Reduce cognitive load',
-  provide_stability: 'Provide emotional stability',
-  minimize_collaboration_pressure: 'Minimize social pressure',
-  add_variety_gamification: 'Add variety & gamification',
-  reduce_choice_paralysis: 'Reduce choice paralysis',
-  observe_and_adapt: 'Observe & adapt',
-  // Confidence feedback
-  structured: 'Structured, step-by-step',
-  visual_metrics: 'Visual progress markers',
-  warm_supportive: 'Warm & supportive',
-  minimal_guidance: 'Minimal — autonomy-first',
-  micro_task_breakdown: 'Micro-task breakdown',
-  balanced: 'Balanced',
-  // Avoidance reframes
-  schedule_light_tasks: 'Schedule lighter tasks',
-  normalize_mistakes: 'Normalize mistakes',
-  set_good_enough_bars: 'Set "good enough" bars',
-  add_challenge_variety: 'Add challenge & variety',
-  first_step_only: 'Show first step only',
-  gentle_exploration: 'Gentle exploration',
-  // Scaffolding approaches
-  scaffold_then_release: 'Scaffold then release',
-  explore_then_constrain: 'Explore then consolidate',
-  clear_schedules: 'Clear schedules',
-  loose_frameworks: 'Loose frameworks',
-  light_scaffold: 'Light scaffolding',
-  // Value framing
-  learning_focused: 'Frame as learning',
-  movement_focused: 'Emphasize movement',
-  contribution_focused: 'Highlight contribution',
-  rest_validated: 'Validate rest as productive',
-  impact_over_activity: 'Focus on impact over activity',
-  // Drains / capabilities / avoidance roots
-  mental: 'Mental effort',
-  emotional: 'Emotional effort',
-  social: 'Social interaction',
-  boring: 'Boring/repetitive tasks',
-  decisions: 'Decision-making',
-  instructions: 'Clear instructions',
-  progress: 'Seeing progress',
-  encouragement: 'Encouragement',
-  figuring: 'Figuring it out',
-  smallwins: 'Small wins',
-  energy: 'Low energy',
-  fear: 'Fear of doing it wrong',
-  perfectionism: 'Perfectionism',
-  boredom: 'Boredom',
-  direction: 'No starting point',
-  // Structure prefs
-  sf: 'Structure then Freedom',
-  fs: 'Freedom then Structure',
-  fulls: 'Mostly Structure',
-  fullf: 'Mostly Flexibility',
-  // Value alignment
-  learn: 'Learning',
-  help: 'Helping others',
-  rest: 'Rest',
-  meaningful: 'Meaningful impact',
-  // Rhythm
-  morning: 'Morning',
-  afternoon: 'Afternoon',
-  night: 'Night',
-  unpredictable: 'Unpredictable',
-  '15-25': '15-25 min',
-  '30-45': '30-45 min',
-  '60+': '60+ min',
-  movement: 'Movement',
-  distraction: 'Distraction',
-  switching: 'Task switching',
-  // Learning
-  'explanation-first': 'Explanation first',
-  'example-first': 'Example first',
-  'trying-first': 'Trying first',
-  encouraging: 'Encouraging',
-  direct: 'Direct',
-  minimal: 'Minimal',
-  gentle: 'Gentle nudges',
-  firm: 'Firm check-ins',
-  'only-when-asked': 'Only when asked',
-  // Accessibility
-  starting: 'Trouble starting',
-  remembering: 'Trouble remembering',
-  sensory: 'Sensory overwhelm',
-  hyperfocus: 'Hyperfocus/crash',
-  anxiety: 'Performance anxiety',
-}
-
-const label = (key: string) =>
-  LABEL[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ')
 
 // --- Sub-question component for optional module steps ---
 
@@ -197,18 +104,20 @@ export const IntakeFlow: React.FC<{ isRetake?: boolean }> = ({ isRetake = false 
             animate={{ opacity: 1, scale: 1 }}
             className="text-center max-w-xl mx-auto"
           >
-            <div className="w-20 h-20 bg-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-8 text-emerald-600">
+            <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-3xl flex items-center justify-center mx-auto mb-8 text-emerald-600 dark:text-emerald-400">
               <Sparkles size={40} />
             </div>
-            <h1 className="text-4xl font-serif font-light text-stone-800 mb-6">Hello there.</h1>
-            <p className="text-stone-500 text-lg leading-relaxed mb-10 font-light">
+            <h1 className="text-4xl font-serif font-light text-stone-800 dark:text-stone-100 mb-6">
+              Hello there.
+            </h1>
+            <p className="text-stone-500 dark:text-stone-400 text-lg leading-relaxed mb-10 font-light">
               I'll ask a few questions to support you better. No right answers, no psych jargon. You
               can skip anything you like.
             </p>
             <button
               type="button"
               onClick={nextStep}
-              className="px-10 py-4 bg-stone-900 text-white rounded-full font-medium hover:bg-stone-800 transition-colors shadow-lg shadow-stone-200"
+              className="px-10 py-4 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded-full font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors shadow-lg shadow-stone-200 dark:shadow-stone-900"
             >
               Help me help you
             </button>
@@ -400,10 +309,10 @@ export const IntakeFlow: React.FC<{ isRetake?: boolean }> = ({ isRetake = false 
               <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6 text-amber-600">
                 <Clock size={28} />
               </div>
-              <h2 className="text-3xl font-serif font-light text-stone-800 mb-3">
+              <h2 className="text-3xl font-serif font-light text-stone-800 dark:text-stone-100 mb-3">
                 Energy & Rhythm
               </h2>
-              <p className="text-stone-500 text-lg font-light leading-relaxed">
+              <p className="text-stone-500 dark:text-stone-400 text-lg font-light leading-relaxed">
                 This helps me suggest better timing. Skip if you want.
               </p>
             </header>
@@ -452,10 +361,10 @@ export const IntakeFlow: React.FC<{ isRetake?: boolean }> = ({ isRetake = false 
               <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6 text-blue-600">
                 <BookOpen size={28} />
               </div>
-              <h2 className="text-3xl font-serif font-light text-stone-800 mb-3">
+              <h2 className="text-3xl font-serif font-light text-stone-800 dark:text-stone-100 mb-3">
                 Learning & Support
               </h2>
-              <p className="text-stone-500 text-lg font-light leading-relaxed">
+              <p className="text-stone-500 dark:text-stone-400 text-lg font-light leading-relaxed">
                 How do you learn and receive feedback best?
               </p>
             </header>
@@ -525,14 +434,14 @@ export const IntakeFlow: React.FC<{ isRetake?: boolean }> = ({ isRetake = false 
             animate={{ opacity: 1, y: 0 }}
             className="max-w-3xl mx-auto"
           >
-            <div className="bg-white rounded-[2.5rem] p-10 shadow-xl shadow-stone-200/50 border border-stone-100 mb-10">
+            <div className="bg-white dark:bg-stone-800 rounded-[2.5rem] p-10 shadow-xl shadow-stone-200/50 dark:shadow-stone-900/50 border border-stone-100 dark:border-stone-700 mb-10">
               {/* Header */}
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center text-white">
                   <ShieldCheck size={30} />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-serif text-stone-800">
+                  <h3 className="text-2xl font-serif text-stone-800 dark:text-stone-100">
                     Here's how I'll support you
                   </h3>
                   <p className="text-stone-400 font-light">You can change any of this later.</p>
@@ -587,7 +496,7 @@ export const IntakeFlow: React.FC<{ isRetake?: boolean }> = ({ isRetake = false 
 
               {/* Optional modules */}
               {(resolved.rhythm || resolved.learning || resolved.accessibility) && (
-                <div className="mt-8 pt-8 border-t border-stone-100 space-y-6">
+                <div className="mt-8 pt-8 border-t border-stone-100 dark:border-stone-700 space-y-6">
                   {resolved.rhythm && (
                     <div className="flex gap-4">
                       <div className="shrink-0 w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
@@ -597,7 +506,7 @@ export const IntakeFlow: React.FC<{ isRetake?: boolean }> = ({ isRetake = false 
                         <h4 className="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-1">
                           Rhythm
                         </h4>
-                        <p className="text-stone-700 text-sm">
+                        <p className="text-stone-700 dark:text-stone-300 text-sm">
                           Focus: {label(resolved.rhythm.focus_time)} &middot; Burst:{' '}
                           {label(resolved.rhythm.work_burst)} &middot; Recovery:{' '}
                           {label(resolved.rhythm.recovery)}
@@ -614,7 +523,7 @@ export const IntakeFlow: React.FC<{ isRetake?: boolean }> = ({ isRetake = false 
                         <h4 className="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-1">
                           Learning
                         </h4>
-                        <p className="text-stone-700 text-sm">
+                        <p className="text-stone-700 dark:text-stone-300 text-sm">
                           Style: {label(resolved.learning.style)} &middot; Feedback:{' '}
                           {label(resolved.learning.feedback)} &middot; Reminders:{' '}
                           {label(resolved.learning.reminders)}
@@ -631,7 +540,7 @@ export const IntakeFlow: React.FC<{ isRetake?: boolean }> = ({ isRetake = false 
                         <h4 className="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-1">
                           Accessibility
                         </h4>
-                        <p className="text-stone-700 text-sm">
+                        <p className="text-stone-700 dark:text-stone-300 text-sm">
                           {resolved.accessibility.needs.map((n) => label(n)).join(', ')}
                         </p>
                       </div>
@@ -667,8 +576,8 @@ export const IntakeFlow: React.FC<{ isRetake?: boolean }> = ({ isRetake = false 
               )}
 
               {/* Summary paragraph */}
-              <div className="mt-8 p-6 bg-stone-50 rounded-2xl border border-stone-100">
-                <p className="text-stone-600 font-light italic leading-relaxed">
+              <div className="mt-8 p-6 bg-stone-50 dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-700">
+                <p className="text-stone-600 dark:text-stone-300 font-light italic leading-relaxed">
                   "I'll adapt our interaction to focus on{' '}
                   {state.intent.length > 0
                     ? state.intent.map((i) => label(i)).join(' and ')
@@ -694,7 +603,7 @@ export const IntakeFlow: React.FC<{ isRetake?: boolean }> = ({ isRetake = false 
                 type="button"
                 onClick={handleConfirm}
                 disabled={submitting}
-                className="px-10 py-4 bg-stone-900 text-white rounded-full font-medium hover:bg-stone-800 transition-colors shadow-lg shadow-stone-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-10 py-4 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded-full font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors shadow-lg shadow-stone-200 dark:shadow-stone-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {submitting && <Loader2 size={16} className="animate-spin" />}
                 Confirm & Continue
@@ -750,7 +659,7 @@ export const IntakeFlow: React.FC<{ isRetake?: boolean }> = ({ isRetake = false 
               <button
                 type="button"
                 onClick={nextStep}
-                className="flex items-center gap-2 px-8 py-3 bg-stone-900 text-white rounded-full font-medium hover:bg-stone-800 transition-colors shadow-lg shadow-stone-200"
+                className="flex items-center gap-2 px-8 py-3 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded-full font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors shadow-lg shadow-stone-200 dark:shadow-stone-900"
               >
                 Next
                 <ChevronRight size={20} />
@@ -772,15 +681,15 @@ const SummaryItem: React.FC<{
   sub?: string
 }> = ({ icon, title, value, sub }) => (
   <div className="flex gap-4">
-    <div className="shrink-0 w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center text-stone-400">
+    <div className="shrink-0 w-10 h-10 rounded-xl bg-stone-50 dark:bg-stone-800 flex items-center justify-center text-stone-400">
       {icon}
     </div>
     <div>
       <h4 className="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-1">
         {title}
       </h4>
-      <p className="text-stone-800 font-medium">{value}</p>
-      {sub && <p className="text-stone-500 text-sm font-light mt-0.5">{sub}</p>}
+      <p className="text-stone-800 dark:text-stone-100 font-medium">{value}</p>
+      {sub && <p className="text-stone-500 dark:text-stone-400 text-sm font-light mt-0.5">{sub}</p>}
     </div>
   </div>
 )

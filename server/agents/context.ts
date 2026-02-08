@@ -6,6 +6,7 @@
  */
 
 import { and, desc, eq } from 'drizzle-orm'
+import { getValidAccessToken, listCalendarEvents } from '../calendar/google'
 import type { Database } from '../db/index'
 import {
   followUpChecks,
@@ -25,7 +26,11 @@ import {
  * Build context for the Sensei agent: user profile, recent interactions
  * (with summaries), recent scheduled actions, and recent reflections.
  */
-export async function buildSenseiContext(db: Database, userId: string): Promise<string> {
+export async function buildSenseiContext(
+  db: Database,
+  userId: string,
+  calendarEnv?: { GOOGLE_CLIENT_ID: string; GOOGLE_CLIENT_SECRET: string },
+): Promise<string> {
   const [user, profile, recentInteractions, recentActions, recentReflections, missedFollowUps] =
     await Promise.all([
       db.select({ name: users.name }).from(users).where(eq(users.id, userId)).get(),
@@ -69,6 +74,9 @@ export async function buildSenseiContext(db: Database, userId: string): Promise<
     ])
 
   const sections: string[] = []
+
+  // Current time
+  sections.push(`## Current Time\n${new Date().toISOString()}`)
 
   // User name
   if (user?.name) {
@@ -129,6 +137,20 @@ export async function buildSenseiContext(db: Database, userId: string): Promise<
     sections.push(
       `## Missed Reflections\nThe user did not reflect on these recent actions:\n${lines.join('\n')}`,
     )
+  }
+
+  // Upcoming calendar schedule (non-fatal if fetch fails)
+  if (calendarEnv) {
+    try {
+      const { accessToken } = await getValidAccessToken(db, userId, calendarEnv)
+      const events = await listCalendarEvents(accessToken, 7)
+      if (events.length > 0) {
+        const lines = events.map((e) => `- ${e.summary} (${e.start} → ${e.end})`)
+        sections.push(`## Upcoming Schedule (Next 7 Days)\n${lines.join('\n')}`)
+      }
+    } catch {
+      // Non-fatal: calendar fetch may fail if tokens expired
+    }
   }
 
   return sections.join('\n\n')

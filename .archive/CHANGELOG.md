@@ -22,6 +22,55 @@ llm-dev guidance:
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-02-08
+**Conversation**: 006 - Six Features: Calendar Sync, Dark Mode, Agent Intelligence
+**Transcript**: [20260208-six-features-calendar-sync-dark-mode-agent-intelligence.json](transcripts/20260208-six-features-calendar-sync-dark-mode-agent-intelligence.json)
+### Added
+- ThemeToggle.tsx
+### Changed
+- Updated sensei.ts
+- Updated context.ts
+- Updated google.ts
+- Updated chat.ts
+- Updated dashboard.tsx
+- Updated globals.css
+- Updated __root.tsx
+- Updated index.tsx
+- Updated chat.tsx
+- Updated profile.tsx
+- Updated ActionCardSkeleton.tsx
+- Updated ErrorBoundary.tsx
+- Updated QuestionStep.tsx
+- Updated IntakeFlow.tsx
+- Updated ProgressBar.tsx
+- Updated TypingIndicator.tsx
+- Updated biome.json
+
+## [1.0.5] - 2026-02-08
+**Conversation**: 005 - Dashboard filters and calendar link fix
+**Transcript**: [20260208-dashboard-filters-and-calendar-link-fix.json](transcripts/20260208-dashboard-filters-and-calendar-link-fix.json)
+### Fixed
+- Fixed issues in dashboard.tsx
+- Fixed issues in google.ts
+- Fixed issues in tools.ts
+
+## [1.0.4] - 2026-02-08
+**Conversation**: 004 - Bug Fixes and Feature Polish
+**Transcript**: [20260208-bug-fixes-and-feature-polish.json](transcripts/20260208-bug-fixes-and-feature-polish.json)
+### Added
+- resolve.ts
+- IntakeContext.tsx
+- profile.tsx
+### Fixed
+- Fixed issues in google.ts
+- Fixed issues in tools.ts
+- Fixed issues in sensei.ts
+- Fixed issues in chat.ts
+- Fixed issues in chat.tsx
+- Fixed issues in MEMORY.md
+- Fixed issues in IntakeFlow.tsx
+- Fixed issues in profile.tsx
+
 ## [1.0.3] - 2026-02-08
 **Conversation**: 003 - Intake flow expansion implementation
 **Transcript**: [20260208-intake-flow-expansion-implementation.json](transcripts/20260208-intake-flow-expansion-implementation.json)

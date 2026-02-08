@@ -40,9 +40,10 @@ export async function getValidAccessToken(
   db: Database,
   userId: string,
   cfEnv: CalendarEnv,
-): Promise<string> {
+): Promise<{ accessToken: string; email: string }> {
   const user = await db
     .select({
+      email: users.email,
       googleAccessToken: users.googleAccessToken,
       googleRefreshToken: users.googleRefreshToken,
       googleTokenExpiry: users.googleTokenExpiry,
@@ -58,7 +59,7 @@ export async function getValidAccessToken(
   // If token still valid (with 60s buffer), return it
   const now = Date.now()
   if (user.googleTokenExpiry && user.googleTokenExpiry > now + 60_000) {
-    return user.googleAccessToken
+    return { accessToken: user.googleAccessToken, email: user.email }
   }
 
   // Refresh
@@ -79,7 +80,7 @@ export async function getValidAccessToken(
       })
       .where(eq(users.id, userId))
 
-    return refreshed.access_token
+    return { accessToken: refreshed.access_token, email: user.email }
   } catch (err) {
     console.error('Token refresh failed for user', userId, err)
     throw new Error('Google token refresh failed — user may need to re-authenticate')
@@ -92,12 +93,12 @@ export async function getValidAccessToken(
 
 /**
  * Create an event on the user's primary Google Calendar.
- * Returns the created event's ID.
+ * Returns the created event's ID and direct htmlLink.
  */
 export async function createCalendarEvent(
   accessToken: string,
   event: CalendarEventInput,
-): Promise<string> {
+): Promise<{ id: string; htmlLink: string }> {
   const body = {
     summary: event.summary,
     description: event.description ?? '',
@@ -119,6 +120,100 @@ export async function createCalendarEvent(
     throw new Error(`Google Calendar API error (${res.status}): ${text}`)
   }
 
-  const data = (await res.json()) as { id: string }
-  return data.id
+  const data = (await res.json()) as { id: string; htmlLink: string }
+  return { id: data.id, htmlLink: data.htmlLink }
+}
+
+/**
+ * Delete an event from the user's primary Google Calendar.
+ * Treats 404/410 as success (event may already be gone).
+ */
+export async function deleteCalendarEvent(accessToken: string, eventId: string): Promise<void> {
+  const res = await fetch(
+    `${CALENDAR_API}/calendars/primary/events/${encodeURIComponent(eventId)}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  )
+
+  // 204 = deleted, 404/410 = already gone — all fine
+  if (res.ok || res.status === 404 || res.status === 410) return
+
+  const text = await res.text()
+  throw new Error(`Google Calendar delete error (${res.status}): ${text}`)
+}
+
+/**
+ * Update start/end times of an existing calendar event.
+ */
+export async function updateCalendarEvent(
+  accessToken: string,
+  eventId: string,
+  update: { startDateTime: string; endDateTime: string },
+): Promise<void> {
+  const res = await fetch(
+    `${CALENDAR_API}/calendars/primary/events/${encodeURIComponent(eventId)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        start: { dateTime: update.startDateTime, timeZone: 'UTC' },
+        end: { dateTime: update.endDateTime, timeZone: 'UTC' },
+      }),
+    },
+  )
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Google Calendar update error (${res.status}): ${text}`)
+  }
+}
+
+/**
+ * List upcoming events from the user's primary Google Calendar.
+ */
+export async function listCalendarEvents(
+  accessToken: string,
+  daysAhead = 7,
+): Promise<Array<{ id: string; summary: string; start: string; end: string }>> {
+  const timeMin = new Date().toISOString()
+  const timeMax = new Date(Date.now() + daysAhead * 86400_000).toISOString()
+
+  const params = new URLSearchParams({
+    timeMin,
+    timeMax,
+    singleEvents: 'true',
+    orderBy: 'startTime',
+    maxResults: '50',
+    fields: 'items(id,summary,start,end)',
+  })
+
+  const res = await fetch(`${CALENDAR_API}/calendars/primary/events?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Google Calendar list error (${res.status}): ${text}`)
+  }
+
+  const data = (await res.json()) as {
+    items?: Array<{
+      id: string
+      summary: string
+      start: { dateTime?: string; date?: string }
+      end: { dateTime?: string; date?: string }
+    }>
+  }
+
+  return (data.items ?? []).map((item) => ({
+    id: item.id,
+    summary: item.summary,
+    start: item.start.dateTime ?? item.start.date ?? '',
+    end: item.end.dateTime ?? item.end.date ?? '',
+  }))
 }
