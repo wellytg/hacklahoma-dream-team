@@ -16,7 +16,7 @@
   - Scheduling, tracking deadlines, and allocating enough work time remains difficult
   - Frequently scrambles at the last minute due to poor time allocation
 
-### B. Second Speaker (Zia) — International / Career-Changer Perspective
+### B. Second Speaker (Mouzam) — International / Career-Changer Perspective
 - Lost his father to a heart attack at age 7; grew up wanting independence as quickly as possible
 - Joined the police force at age 17
 - Describes himself as a "curious soul" who wants to learn everything — which creates overload
