@@ -22,6 +22,23 @@ llm-dev guidance:
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-02-08
+**Conversation**: 004 - Bug Fixes and Feature Polish
+**Transcript**: [20260208-bug-fixes-and-feature-polish.json](transcripts/20260208-bug-fixes-and-feature-polish.json)
+### Added
+- resolve.ts
+- IntakeContext.tsx
+- profile.tsx
+### Fixed
+- Fixed issues in google.ts
+- Fixed issues in tools.ts
+- Fixed issues in sensei.ts
+- Fixed issues in chat.ts
+- Fixed issues in chat.tsx
+- Fixed issues in MEMORY.md
+- Fixed issues in IntakeFlow.tsx
+- Fixed issues in profile.tsx
+
 ## [1.0.3] - 2026-02-08
 **Conversation**: 003 - Intake flow expansion implementation
 **Transcript**: [20260208-intake-flow-expansion-implementation.json](transcripts/20260208-intake-flow-expansion-implementation.json)

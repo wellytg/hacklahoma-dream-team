@@ -3,7 +3,7 @@
 This directory contains verbatim transcripts of development conversations for hacklahoma-dream-team. Each transcript is a complete record of dialogue, tool usage, and outcomes.
 
 ## Latest Conversation
-**Current**: 3
+**Current**: 4
 
 ## Conversation Index
 
@@ -33,6 +33,14 @@ See llm-dev documentation for transcript format and examples.
 **Participants**: Dallas Elleman (@DallasElleman), Claude Opus 4.5 (claude-opus-4-6)
 **Topics**: intake-flow, conflict-resolution, react-components, state-management
 **Outcomes**: Created 4 file(s); Modified 1 file(s)
+
+
+### 004 - Bug Fixes and Feature Polish
+**File**: 20260208-bug-fixes-and-feature-polish.json
+**Date**: February 8, 2026
+**Participants**: Dallas Elleman (@DallasElleman), Claude Opus 4.5 (claude-opus-4-6)
+**Topics**: calendar links, duplicate scheduling, profile redesign, agent greeting, deployment
+**Outcomes**: Created 3 file(s); Modified 8 file(s)
 
 ## Transcript Format
 
