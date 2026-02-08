@@ -22,6 +22,14 @@ llm-dev guidance:
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-02-07
+**Conversation**: 002 - Branch Management and Intake Expansion Planning
+**Transcript**: [20260207-branch-management-and-intake-expansion-planning.json](transcripts/20260207-branch-management-and-intake-expansion-planning.json)
+### Added
+- PROJECT-STORY.md
+- merry-nibbling-marble.md
+- expansion-plan.md
+
 ## [1.0.1] - 2026-02-07
 **Conversation**: 001 - Project Init and MVP Scoping
 **Transcript**: [20260207-project-init-and-mvp-scoping.json](transcripts/20260207-project-init-and-mvp-scoping.json)

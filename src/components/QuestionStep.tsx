@@ -1,8 +1,42 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { QuestionOption } from '../types';
+
+// --- Reusable OptionButton ---
+
+interface OptionButtonProps {
+  option: QuestionOption;
+  selected: boolean;
+  onSelect: () => void;
+}
+
+export const OptionButton: React.FC<OptionButtonProps> = ({ option, selected, onSelect }) => (
+  <button
+    onClick={onSelect}
+    className={`w-full p-5 text-left rounded-2xl border transition-all duration-300 flex items-center justify-between group ${
+      selected
+        ? 'bg-emerald-50 border-emerald-200 shadow-sm'
+        : 'bg-white border-stone-200 hover:border-stone-300 hover:shadow-md'
+    }`}
+  >
+    <div>
+      <div className={`font-medium transition-colors ${selected ? 'text-emerald-800' : 'text-stone-700'}`}>
+        {option.label}
+      </div>
+      {option.sublabel && (
+        <div className="text-sm text-stone-400 mt-1 font-light">{option.sublabel}</div>
+      )}
+    </div>
+    <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
+      selected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-stone-200 group-hover:border-stone-300'
+    }`}>
+      {selected && <Check size={14} />}
+    </div>
+  </button>
+);
+
+// --- QuestionStep (uses OptionButton internally) ---
 
 interface QuestionStepProps {
   title: string;
@@ -35,29 +69,12 @@ export const QuestionStep: React.FC<QuestionStepProps> = ({
 
       <div className="space-y-4">
         {options.map((option) => (
-          <button
+          <OptionButton
             key={option.id}
-            onClick={() => onSelect(option.id)}
-            className={`w-full p-5 text-left rounded-2xl border transition-all duration-300 flex items-center justify-between group ${
-              isSelected(option.id)
-                ? 'bg-emerald-50 border-emerald-200 shadow-sm'
-                : 'bg-white border-stone-200 hover:border-stone-300 hover:shadow-md'
-            }`}
-          >
-            <div>
-              <div className={`font-medium transition-colors ${isSelected(option.id) ? 'text-emerald-800' : 'text-stone-700'}`}>
-                {option.label}
-              </div>
-              {option.sublabel && (
-                <div className="text-sm text-stone-400 mt-1 font-light">{option.sublabel}</div>
-              )}
-            </div>
-            <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
-              isSelected(option.id) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-stone-200 group-hover:border-stone-300'
-            }`}>
-              {isSelected(option.id) && <Check size={14} />}
-            </div>
-          </button>
+            option={option}
+            selected={isSelected(option.id)}
+            onSelect={() => onSelect(option.id)}
+          />
         ))}
       </div>
     </div>
