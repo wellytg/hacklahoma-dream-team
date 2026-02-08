@@ -168,8 +168,10 @@ function DashboardPage() {
                 filter: null as 'completed' | 'missed' | null,
               },
             ].map((stat) => {
-              const isClickable = stat.filter !== null
-              const isActive = isClickable && viewFilter === stat.filter
+              const isPending = stat.label === 'Pending'
+              const isClickable = stat.filter !== null || (isPending && viewFilter !== null)
+              const isActive =
+                stat.filter !== null ? viewFilter === stat.filter : isPending && viewFilter === null
               return (
                 <button
                   type="button"
