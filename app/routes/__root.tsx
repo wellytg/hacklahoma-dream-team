@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-router'
 import * as React from 'react'
 import globalsCss from '~/styles/globals.css?url'
+import { AuthProvider } from '~/context/AuthContext'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -39,8 +40,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   return (
-    <div className="min-h-screen selection:bg-emerald-100 selection:text-emerald-900">
-      <Outlet />
-    </div>
+    <AuthProvider>
+      <div className="min-h-screen selection:bg-emerald-100 selection:text-emerald-900">
+        <Outlet />
+      </div>
+    </AuthProvider>
   )
 }

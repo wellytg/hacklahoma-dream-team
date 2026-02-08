@@ -1,17 +1,34 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Calendar, MessageCircle, RefreshCw, Clock } from 'lucide-react'
-import { getScheduledActions } from '../../server/routes/chat'
-import type { ScheduledAction } from '../../shared/types'
+import { getScheduledActions } from '../../../server/routes/chat'
+import { getProfile } from '../../../server/routes/profile'
+import type { ScheduledAction } from '../../../shared/types'
 
-export const Route = createFileRoute('/dashboard')({
+export const Route = createFileRoute('/_authenticated/dashboard')({
   component: DashboardPage,
 })
 
 function DashboardPage() {
+  const navigate = useNavigate()
   const [actions, setActions] = useState<ScheduledAction[]>([])
   const [loadingActions, setLoadingActions] = useState(true)
+  const [checkingProfile, setCheckingProfile] = useState(true)
+
+  // Guard: redirect to intake if no profile
+  useEffect(() => {
+    getProfile()
+      .then((res) => {
+        if (!res.profile?.intakeCompletedAt) {
+          navigate({ to: '/intake' })
+        }
+      })
+      .catch(() => {
+        // If profile check fails, let them stay (auth guard handles unauthed)
+      })
+      .finally(() => setCheckingProfile(false))
+  }, [navigate])
 
   useEffect(() => {
     const load = async () => {
@@ -38,6 +55,14 @@ function DashboardPage() {
       default:
         return 'text-blue-600 bg-blue-50'
     }
+  }
+
+  if (checkingProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (

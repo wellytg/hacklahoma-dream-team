@@ -2,15 +2,15 @@ import { createFileRoute, useSearch } from '@tanstack/react-router'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Loader2, CalendarCheck } from 'lucide-react'
-import { startSession, sendMessage } from '../../server/routes/chat'
-import type { ChatMessage } from '../../shared/types'
+import { startSession, sendMessage } from '../../../server/routes/chat'
+import type { ChatMessage } from '../../../shared/types'
 
 interface ChatSearch {
   mode?: 'reflection'
   action?: string
 }
 
-export const Route = createFileRoute('/chat')({
+export const Route = createFileRoute('/_authenticated/chat')({
   component: ChatPage,
   validateSearch: (search: Record<string, unknown>): ChatSearch => ({
     mode: search.mode === 'reflection' ? 'reflection' : undefined,
@@ -19,7 +19,7 @@ export const Route = createFileRoute('/chat')({
 })
 
 function ChatPage() {
-  const search = useSearch({ from: '/chat' })
+  const search = useSearch({ from: '/_authenticated/chat' })
   const isReflection = search.mode === 'reflection'
   const actionId = search.action
 
@@ -45,7 +45,6 @@ function ChatPage() {
         const result = await startSession({ data: { mode, actionId } })
         setInteractionId(result.interactionId)
       } catch {
-        // If auth fails, could redirect — for now just log
         console.error('Failed to start session')
       }
     }
@@ -56,7 +55,6 @@ function ChatPage() {
     const text = input.trim()
     if (!text || !interactionId || loading) return
 
-    // Optimistically add the user message
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
@@ -77,7 +75,6 @@ function ChatPage() {
         setScheduledActions((prev) => [...prev, ...result.actions])
       }
     } catch {
-      // Show error as a system message
       setMsgs((prev) => [
         ...prev,
         {

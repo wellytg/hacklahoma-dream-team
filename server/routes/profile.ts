@@ -11,7 +11,7 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '../db/index';
 import { userProfiles } from '../db/schema';
 import { validateSession } from '../auth/session';
-import type { RawAnswers } from '../../shared/types';
+import type { RawAnswers, ResolvedStateModel } from '../../shared/types';
 
 const SESSION_COOKIE = 'sensei_session';
 
@@ -34,11 +34,11 @@ async function requireUserId(): Promise<string> {
 // ---------------------------------------------------------------------------
 
 export const saveProfile = createServerFn({ method: 'POST' })
-  .inputValidator((data: { answers: RawAnswers }) => data)
+  .inputValidator((data: { answers: RawAnswers; resolvedState?: ResolvedStateModel }) => data)
   .handler(async ({ data }) => {
     const userId = await requireUserId();
     const db = getDb(env.DB);
-    const { answers } = data;
+    const { answers, resolvedState } = data;
 
     const existing = await db
       .select({ id: userProfiles.id })
@@ -62,6 +62,7 @@ export const saveProfile = createServerFn({ method: 'POST' })
       feedbackPref: answers.feedbackPref ?? null,
       reminderPref: answers.reminderPref ?? null,
       accessNeeds: answers.accessNeeds ? JSON.stringify(answers.accessNeeds) : null,
+      resolvedState: resolvedState ? JSON.stringify(resolvedState) : null,
       intakeCompletedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

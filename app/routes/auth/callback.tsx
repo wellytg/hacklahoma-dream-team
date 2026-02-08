@@ -3,12 +3,13 @@
  *
  * Google redirects here after the user authorizes. We extract the `code`
  * query parameter, exchange it for tokens via the server function, and
- * redirect to the dashboard.
+ * redirect based on profile state.
  */
 
 import React, { useEffect, useState } from 'react';
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router';
 import { handleAuthCallback } from '../../../server/routes/auth';
+import { getProfile } from '../../../server/routes/profile';
 
 interface CallbackSearch {
   code?: string;
@@ -43,10 +44,20 @@ function CallbackPage() {
     }
 
     handleAuthCallback({ data: { code } })
-      .then(() => {
+      .then(async () => {
         // Session cookie is set by the server response.
-        // Navigate to the dashboard.
-        navigate({ to: '/' });
+        // Check profile to decide where to send the user.
+        try {
+          const { profile } = await getProfile();
+          if (profile?.intakeCompletedAt) {
+            navigate({ to: '/dashboard' });
+          } else {
+            navigate({ to: '/intake' });
+          }
+        } catch {
+          // Profile check failed — default to intake
+          navigate({ to: '/intake' });
+        }
       })
       .catch((err: unknown) => {
         console.error('Auth callback failed:', err);
@@ -57,16 +68,21 @@ function CallbackPage() {
 
   if (status === 'error') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', gap: '1rem' }}>
-        <p style={{ color: '#dc2626' }}>{errorMessage}</p>
-        <a href="/auth/login">Try again</a>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-red-600">{errorMessage}</p>
+        <a href="/" className="text-stone-500 hover:text-stone-700 underline">
+          Back to home
+        </a>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-      <p>Completing sign-in&hellip;</p>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center gap-3 text-stone-500">
+        <div className="w-5 h-5 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+        <p>Completing sign-in&hellip;</p>
+      </div>
     </div>
   );
 }

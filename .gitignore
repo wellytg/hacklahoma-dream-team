@@ -2,7 +2,7 @@
 .output/
 .wrangler/
 .worker-configuration.d.ts
-app/routeTree.gen.ts
+
 
 # Language-specific
 # Python

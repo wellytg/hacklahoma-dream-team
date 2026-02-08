@@ -1,12 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from '@tanstack/react-router';
 import { useIntake } from '~/context/IntakeContext';
 import { QuestionStep, OptionButton } from './QuestionStep';
 import { ProgressBar } from './ProgressBar';
+import { saveProfile } from '../../server/routes/profile';
 import {
   ChevronLeft, ChevronRight, Sparkles, Brain, Zap, Heart,
-  ShieldCheck, RefreshCw, Clock, BookOpen, Accessibility, AlertTriangle
+  ShieldCheck, RefreshCw, Clock, BookOpen, Accessibility, AlertTriangle, Loader2
 } from 'lucide-react';
 
 // --- Helper: human-readable labels for resolved values ---
@@ -100,8 +102,24 @@ const SubQuestion: React.FC<SubQuestionProps> = ({ title, options, selected, onS
 
 // --- Main IntakeFlow ---
 
-export const IntakeFlow: React.FC = () => {
+export const IntakeFlow: React.FC<{ isRetake?: boolean }> = ({ isRetake = false }) => {
   const { currentStep, nextStep, prevStep, state, updateState, setStep, getResolvedState } = useIntake();
+  const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleConfirm = async () => {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await saveProfile({ data: { answers: state, resolvedState: getResolvedState() } });
+      navigate({ to: isRetake ? '/dashboard' : '/chat' });
+    } catch {
+      setSubmitError('Failed to save your profile. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleToggleValue = (key: string, value: string, multiple = false) => {
     if (multiple) {
@@ -480,12 +498,24 @@ export const IntakeFlow: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex justify-center">
+            {submitError && (
+              <p className="text-center text-red-600 text-sm mb-4">{submitError}</p>
+            )}
+
+            <div className="flex justify-center gap-6">
               <button
                 onClick={() => setStep(0)}
                 className="text-stone-400 hover:text-stone-600 transition-colors text-sm font-medium tracking-wide"
               >
                 Reset and restart flow
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={submitting}
+                className="px-10 py-4 bg-stone-900 text-white rounded-full font-medium hover:bg-stone-800 transition-colors shadow-lg shadow-stone-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {submitting && <Loader2 size={16} className="animate-spin" />}
+                Confirm & Continue
               </button>
             </div>
           </motion.div>
