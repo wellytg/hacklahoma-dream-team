@@ -104,7 +104,7 @@ export const sendMessage = createServerFn({ method: 'POST' })
 
     // Call the appropriate agent (with graceful fallback on API errors)
     let responseText: string
-    let actions: Array<{ actionId: string; title: string }> = []
+    let actions: Array<{ actionId: string; title: string; calendarHtmlLink?: string }> = []
 
     try {
       if (interaction.type === 'reflection' && data.actionId) {
@@ -125,11 +125,18 @@ export const sendMessage = createServerFn({ method: 'POST' })
             .where(eq(interactions.id, data.interactionId))
         }
       } else {
-        const result = await runSenseiTurn(db, userId, data.interactionId, conversationMessages, {
-          ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
-          GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
-          GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
-        })
+        const result = await runSenseiTurn(
+          db,
+          userId,
+          data.interactionId,
+          conversationMessages,
+          {
+            ANTHROPIC_API_KEY: env.ANTHROPIC_API_KEY,
+            GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+            GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+          },
+          { allowScheduling: interaction.status !== 'completed' },
+        )
         responseText = result.text
         actions = result.actions
 

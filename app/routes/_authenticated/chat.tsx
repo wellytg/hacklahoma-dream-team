@@ -47,7 +47,7 @@ const mdComponents = {
 interface ScheduledActionUI {
   actionId: string
   title: string
-  calendarEventId?: string
+  calendarHtmlLink?: string
 }
 
 function ChatPage() {
@@ -217,9 +217,9 @@ function ChatPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex justify-start"
               >
-                {action.calendarEventId ? (
+                {action.calendarHtmlLink ? (
                   <a
-                    href={`https://calendar.google.com/calendar/event?eid=${btoa(`${action.calendarEventId} `)}`}
+                    href={action.calendarHtmlLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl px-4 py-3 text-sm hover:bg-emerald-100 transition-colors"

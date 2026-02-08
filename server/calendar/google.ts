@@ -92,12 +92,12 @@ export async function getValidAccessToken(
 
 /**
  * Create an event on the user's primary Google Calendar.
- * Returns the created event's ID.
+ * Returns the created event's ID and direct htmlLink.
  */
 export async function createCalendarEvent(
   accessToken: string,
   event: CalendarEventInput,
-): Promise<string> {
+): Promise<{ id: string; htmlLink: string }> {
   const body = {
     summary: event.summary,
     description: event.description ?? '',
@@ -119,6 +119,6 @@ export async function createCalendarEvent(
     throw new Error(`Google Calendar API error (${res.status}): ${text}`)
   }
 
-  const data = (await res.json()) as { id: string }
-  return data.id
+  const data = (await res.json()) as { id: string; htmlLink: string }
+  return { id: data.id, htmlLink: data.htmlLink }
 }

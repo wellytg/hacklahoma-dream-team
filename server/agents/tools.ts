@@ -147,7 +147,7 @@ export async function executeScheduleAction(
   interactionId: string,
   input: ScheduleActionInput,
   cfEnv: CalendarEnv,
-): Promise<{ actionId: string; calendarEventId: string }> {
+): Promise<{ actionId: string; calendarEventId: string; calendarHtmlLink: string }> {
   const duration = input.durationMinutes ?? 30
   const reflectionDelay = input.reflectionDelayHours ?? 12
 
@@ -160,7 +160,7 @@ export async function executeScheduleAction(
   const accessToken = await getValidAccessToken(db, userId, cfEnv)
 
   // Create action calendar event
-  const calendarEventId = await createCalendarEvent(accessToken, {
+  const calendarEvent = await createCalendarEvent(accessToken, {
     summary: input.title,
     description: input.description,
     startDateTime: startDate.toISOString(),
@@ -169,7 +169,7 @@ export async function executeScheduleAction(
 
   // Create reflection calendar event
   const reflectionEndDate = new Date(reflectionDate.getTime() + 15 * 60_000)
-  const reflectionEventId = await createCalendarEvent(accessToken, {
+  const reflectionEvent = await createCalendarEvent(accessToken, {
     summary: `Reflect: ${input.title}`,
     description: `Time to reflect on "${input.title}". Open Sensei to check in.`,
     startDateTime: reflectionDate.toISOString(),
@@ -182,8 +182,8 @@ export async function executeScheduleAction(
     id: actionId,
     userId,
     interactionId,
-    calendarEventId,
-    reflectionEventId,
+    calendarEventId: calendarEvent.id,
+    reflectionEventId: reflectionEvent.id,
     title: input.title,
     description: input.description ?? null,
     scheduledAt: startDate.toISOString(),
@@ -203,7 +203,7 @@ export async function executeScheduleAction(
     scheduledAt: followUpDate.toISOString(),
   })
 
-  return { actionId, calendarEventId }
+  return { actionId, calendarEventId: calendarEvent.id, calendarHtmlLink: calendarEvent.htmlLink }
 }
 
 /**

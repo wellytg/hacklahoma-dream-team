@@ -112,7 +112,12 @@ interface AgentEnv {
 
 export interface SenseiResult {
   text: string
-  actions: Array<{ actionId: string; title: string; calendarEventId: string }>
+  actions: Array<{
+    actionId: string
+    title: string
+    calendarEventId: string
+    calendarHtmlLink: string
+  }>
 }
 
 /**
@@ -128,8 +133,10 @@ export async function runSenseiTurn(
   interactionId: string,
   conversationMessages: Array<{ role: 'user' | 'assistant'; content: string }>,
   cfEnv: AgentEnv,
+  options?: { allowScheduling?: boolean },
 ): Promise<SenseiResult> {
   const client = new Anthropic({ apiKey: cfEnv.ANTHROPIC_API_KEY })
+  const allowScheduling = options?.allowScheduling ?? true
 
   // Build user context and prepend to system prompt
   const context = await buildSenseiContext(db, userId)
@@ -137,7 +144,12 @@ export async function runSenseiTurn(
     ? `${SENSEI_SYSTEM_PROMPT}\n\n---\n\n# USER CONTEXT\n\n${context}`
     : SENSEI_SYSTEM_PROMPT
 
-  const actions: Array<{ actionId: string; title: string; calendarEventId: string }> = []
+  const actions: Array<{
+    actionId: string
+    title: string
+    calendarEventId: string
+    calendarHtmlLink: string
+  }> = []
 
   // Build the messages array for Claude
   let claudeMessages: Anthropic.MessageParam[] = conversationMessages.map((m) => ({
@@ -151,7 +163,7 @@ export async function runSenseiTurn(
       model: 'claude-sonnet-4-5-20250929',
       max_tokens: 1024,
       system: systemPrompt,
-      tools: SENSEI_TOOLS,
+      ...(allowScheduling ? { tools: SENSEI_TOOLS } : {}),
       messages: claudeMessages,
     })
 
@@ -191,6 +203,7 @@ export async function runSenseiTurn(
             actionId: result.actionId,
             title: (toolBlock.input as { title: string }).title,
             calendarEventId: result.calendarEventId,
+            calendarHtmlLink: result.calendarHtmlLink,
           })
           toolResults.push({
             type: 'tool_result',
