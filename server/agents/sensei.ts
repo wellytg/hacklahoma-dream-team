@@ -35,6 +35,8 @@ You have access to the user's profile, which includes:
 - Their avoidance style (how they tend to procrastinate or disengage)
 - Their preferred mode of conversation (direct, exploratory, gentle, etc.)
 - Their interaction history (past conversations, actions, reflections)
+- The current date and time (use this when scheduling events at relative times like "in an hour")
+- Their upcoming calendar schedule (to avoid conflicts when scheduling)
 
 Use this information to adapt your tone, pacing, and approach. Do not
 reference the profile explicitly — let it inform how you interact naturally.
@@ -53,7 +55,7 @@ not executing a visible checklist.
 
 ### The Opening
 Begin each session with a single, open question:
-"What's the one thing you'd like to do better in your life?"
+"**What's the one thing you'd like to do better in your life right now?**"
 
 If this is a returning user with prior context, you may reference previous
 conversations naturally (e.g., "Last time we talked about your sleep
@@ -89,6 +91,9 @@ When the user agrees to an action, use the schedule_action tool with:
 - A clear title for the action
 - A specific start date/time
 - Context connecting it to the user's goal
+
+When choosing a time, use the current time from your context to calculate relative times.
+Check the user's upcoming schedule and avoid time conflicts.
 
 ## WHAT YOU NEVER DO
 
@@ -139,7 +144,10 @@ export async function runSenseiTurn(
   const allowScheduling = options?.allowScheduling ?? true
 
   // Build user context and prepend to system prompt
-  const context = await buildSenseiContext(db, userId)
+  const context = await buildSenseiContext(db, userId, {
+    GOOGLE_CLIENT_ID: cfEnv.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: cfEnv.GOOGLE_CLIENT_SECRET,
+  })
   const systemPrompt = context
     ? `${SENSEI_SYSTEM_PROMPT}\n\n---\n\n# USER CONTEXT\n\n${context}`
     : SENSEI_SYSTEM_PROMPT

@@ -7,7 +7,7 @@ export const ProgressBar: React.FC = () => {
   const progress = (currentStep / totalSteps) * 100
 
   return (
-    <div className="w-full h-1 bg-stone-200 rounded-full overflow-hidden mb-12">
+    <div className="w-full h-1 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden mb-12">
       <motion.div
         className="h-full bg-emerald-500"
         initial={{ width: 0 }}

@@ -31,15 +31,15 @@ const SummaryItem: React.FC<{
   sub?: string
 }> = ({ icon, title, value, sub }) => (
   <div className="flex gap-4">
-    <div className="shrink-0 w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center text-stone-400">
+    <div className="shrink-0 w-10 h-10 rounded-xl bg-stone-50 dark:bg-stone-800 flex items-center justify-center text-stone-400">
       {icon}
     </div>
     <div>
       <h4 className="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-1">
         {title}
       </h4>
-      <p className="text-stone-800 font-medium">{value}</p>
-      {sub && <p className="text-stone-500 text-sm font-light mt-0.5">{sub}</p>}
+      <p className="text-stone-800 dark:text-stone-100 font-medium">{value}</p>
+      {sub && <p className="text-stone-500 dark:text-stone-400 text-sm font-light mt-0.5">{sub}</p>}
     </div>
   </div>
 )
@@ -104,7 +104,7 @@ function ProfilePage() {
         <div className="mb-6">
           <Link
             to="/dashboard"
-            className="inline-flex items-center gap-2 p-1.5 -ml-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors text-sm"
+            className="inline-flex items-center gap-2 p-1.5 -ml-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 dark:hover:text-stone-300 dark:hover:bg-stone-800 transition-colors text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
             Dashboard
@@ -112,14 +112,16 @@ function ProfilePage() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="bg-white rounded-[2.5rem] p-10 shadow-xl shadow-stone-200/50 border border-stone-100 mb-10">
+          <div className="bg-white dark:bg-stone-800 rounded-[2.5rem] p-10 shadow-xl shadow-stone-200/50 dark:shadow-stone-900/50 border border-stone-100 dark:border-stone-700 mb-10">
             {/* Header */}
             <div className="flex items-center gap-4 mb-8">
               <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center text-white">
                 <ShieldCheck size={30} />
               </div>
               <div>
-                <h3 className="text-2xl font-serif text-stone-800">Here's how I'll support you</h3>
+                <h3 className="text-2xl font-serif text-stone-800 dark:text-stone-100">
+                  Here's how I'll support you
+                </h3>
                 <p className="text-stone-400 font-light">You can change any of this later.</p>
               </div>
             </div>
@@ -172,7 +174,7 @@ function ProfilePage() {
 
             {/* Optional modules */}
             {(resolved.rhythm || resolved.learning || resolved.accessibility) && (
-              <div className="mt-8 pt-8 border-t border-stone-100 space-y-6">
+              <div className="mt-8 pt-8 border-t border-stone-100 dark:border-stone-700 space-y-6">
                 {resolved.rhythm && (
                   <div className="flex gap-4">
                     <div className="shrink-0 w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
@@ -182,7 +184,7 @@ function ProfilePage() {
                       <h4 className="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-1">
                         Rhythm
                       </h4>
-                      <p className="text-stone-700 text-sm">
+                      <p className="text-stone-700 dark:text-stone-300 text-sm">
                         Focus: {label(resolved.rhythm.focus_time)} &middot; Burst:{' '}
                         {label(resolved.rhythm.work_burst)} &middot; Recovery:{' '}
                         {label(resolved.rhythm.recovery)}
@@ -199,7 +201,7 @@ function ProfilePage() {
                       <h4 className="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-1">
                         Learning
                       </h4>
-                      <p className="text-stone-700 text-sm">
+                      <p className="text-stone-700 dark:text-stone-300 text-sm">
                         Style: {label(resolved.learning.style)} &middot; Feedback:{' '}
                         {label(resolved.learning.feedback)} &middot; Reminders:{' '}
                         {label(resolved.learning.reminders)}
@@ -216,7 +218,7 @@ function ProfilePage() {
                       <h4 className="text-xs uppercase tracking-widest text-stone-400 font-semibold mb-1">
                         Accessibility
                       </h4>
-                      <p className="text-stone-700 text-sm">
+                      <p className="text-stone-700 dark:text-stone-300 text-sm">
                         {resolved.accessibility.needs.map((n) => label(n)).join(', ')}
                       </p>
                     </div>
@@ -252,8 +254,8 @@ function ProfilePage() {
             )}
 
             {/* Summary paragraph */}
-            <div className="mt-8 p-6 bg-stone-50 rounded-2xl border border-stone-100">
-              <p className="text-stone-600 font-light italic leading-relaxed">
+            <div className="mt-8 p-6 bg-stone-50 dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-700">
+              <p className="text-stone-600 dark:text-stone-300 font-light italic leading-relaxed">
                 "I'll adapt our interaction to focus on{' '}
                 {resolved.intent.length > 0
                   ? resolved.intent.map((i) => label(i)).join(' and ')
@@ -276,7 +278,7 @@ function ProfilePage() {
             <button
               type="button"
               onClick={() => navigate({ to: '/dashboard' })}
-              className="px-10 py-4 bg-stone-900 text-white rounded-full font-medium hover:bg-stone-800 transition-colors shadow-lg shadow-stone-200"
+              className="px-10 py-4 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded-full font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors shadow-lg shadow-stone-200 dark:shadow-stone-900"
             >
               Confirm & Continue
             </button>

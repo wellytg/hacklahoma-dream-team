@@ -7,6 +7,7 @@ import Markdown from 'react-markdown'
 import { useAuth } from '~/context/AuthContext'
 import { sendMessage, startSession } from '../../../server/routes/chat'
 import type { ChatMessage } from '../../../shared/types'
+import { ThemeToggle } from '../../components/ThemeToggle'
 import { TypingIndicator } from '../../components/TypingIndicator'
 
 interface ChatSearch {
@@ -31,7 +32,7 @@ function formatTimestamp(iso: string): string {
 const mdComponents = {
   p: (props: React.ComponentProps<'p'>) => <p className="mb-2 last:mb-0" {...props} />,
   strong: (props: React.ComponentProps<'strong'>) => (
-    <strong className="font-semibold text-stone-800" {...props} />
+    <strong className="font-semibold text-stone-800 dark:text-stone-100" {...props} />
   ),
   ul: (props: React.ComponentProps<'ul'>) => (
     <ul className="list-disc list-inside space-y-1 my-2" {...props} />
@@ -40,7 +41,10 @@ const mdComponents = {
     <ol className="list-decimal list-inside space-y-1 my-2" {...props} />
   ),
   code: (props: React.ComponentProps<'code'>) => (
-    <code className="bg-stone-100 px-1.5 py-0.5 rounded text-xs font-mono" {...props} />
+    <code
+      className="bg-stone-100 dark:bg-stone-700 px-1.5 py-0.5 rounded text-xs font-mono"
+      {...props}
+    />
   ),
 }
 
@@ -142,17 +146,17 @@ function ChatPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="border-b border-stone-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-stone-200 dark:border-stone-700 bg-white/80 dark:bg-stone-900/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               to="/dashboard"
-              className="p-1.5 -ml-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+              className="p-1.5 -ml-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 dark:hover:text-stone-300 dark:hover:bg-stone-800 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-xl font-serif font-light text-stone-800">
+              <h1 className="text-xl font-serif font-light text-stone-800 dark:text-stone-100">
                 {isReflection ? 'Reflection' : 'Sensei'}
               </h1>
               {isReflection && (
@@ -160,14 +164,17 @@ function ChatPage() {
               )}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={logout}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
-            title="Log out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={logout}
+              className="p-1.5 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 dark:hover:text-stone-300 dark:hover:bg-stone-800 transition-colors"
+              title="Log out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -192,10 +199,10 @@ function ChatPage() {
                 <div
                   className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                     msg.role === 'user'
-                      ? 'bg-stone-800 text-white'
+                      ? 'bg-stone-800 dark:bg-stone-700 text-white'
                       : msg.role === 'system'
-                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                        : 'bg-white text-stone-700 border border-stone-200'
+                        ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800'
+                        : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border border-stone-200 dark:border-stone-700'
                   }`}
                 >
                   {msg.role === 'user' ? (
@@ -225,13 +232,13 @@ function ChatPage() {
                     href={action.calendarHtmlLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl px-4 py-3 text-sm hover:bg-emerald-100 transition-colors"
+                    className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800 rounded-2xl px-4 py-3 text-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
                   >
                     <CalendarCheck className="w-4 h-4 shrink-0" />
                     <span>Scheduled: {action.title}</span>
                   </a>
                 ) : (
-                  <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl px-4 py-3 text-sm">
+                  <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800 rounded-2xl px-4 py-3 text-sm">
                     <CalendarCheck className="w-4 h-4 shrink-0" />
                     <span>Scheduled: {action.title}</span>
                   </div>
@@ -248,7 +255,7 @@ function ChatPage() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-stone-200 bg-white/80 backdrop-blur-sm sticky bottom-0">
+      <div className="border-t border-stone-200 dark:border-stone-700 bg-white/80 dark:bg-stone-900/80 backdrop-blur-sm sticky bottom-0">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-end gap-3">
             <textarea
@@ -259,7 +266,7 @@ function ChatPage() {
               placeholder="Type a message..."
               rows={1}
               disabled={!interactionId || loading}
-              className="flex-1 resize-none rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300 disabled:opacity-50"
+              className="flex-1 resize-none rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-4 py-3 text-sm text-stone-800 dark:text-stone-100 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300 dark:focus:ring-stone-600 disabled:opacity-50"
               style={{ minHeight: '44px', maxHeight: '120px' }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement
@@ -271,7 +278,7 @@ function ChatPage() {
               type="button"
               onClick={handleSend}
               disabled={!input.trim() || !interactionId || loading}
-              className="shrink-0 rounded-xl bg-stone-800 p-3 text-white hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="shrink-0 rounded-xl bg-stone-800 dark:bg-stone-700 p-3 text-white hover:bg-stone-700 dark:hover:bg-stone-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <Send className="w-4 h-4" />
             </button>

@@ -123,3 +123,97 @@ export async function createCalendarEvent(
   const data = (await res.json()) as { id: string; htmlLink: string }
   return { id: data.id, htmlLink: data.htmlLink }
 }
+
+/**
+ * Delete an event from the user's primary Google Calendar.
+ * Treats 404/410 as success (event may already be gone).
+ */
+export async function deleteCalendarEvent(accessToken: string, eventId: string): Promise<void> {
+  const res = await fetch(
+    `${CALENDAR_API}/calendars/primary/events/${encodeURIComponent(eventId)}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  )
+
+  // 204 = deleted, 404/410 = already gone — all fine
+  if (res.ok || res.status === 404 || res.status === 410) return
+
+  const text = await res.text()
+  throw new Error(`Google Calendar delete error (${res.status}): ${text}`)
+}
+
+/**
+ * Update start/end times of an existing calendar event.
+ */
+export async function updateCalendarEvent(
+  accessToken: string,
+  eventId: string,
+  update: { startDateTime: string; endDateTime: string },
+): Promise<void> {
+  const res = await fetch(
+    `${CALENDAR_API}/calendars/primary/events/${encodeURIComponent(eventId)}`,
+    {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        start: { dateTime: update.startDateTime, timeZone: 'UTC' },
+        end: { dateTime: update.endDateTime, timeZone: 'UTC' },
+      }),
+    },
+  )
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Google Calendar update error (${res.status}): ${text}`)
+  }
+}
+
+/**
+ * List upcoming events from the user's primary Google Calendar.
+ */
+export async function listCalendarEvents(
+  accessToken: string,
+  daysAhead = 7,
+): Promise<Array<{ id: string; summary: string; start: string; end: string }>> {
+  const timeMin = new Date().toISOString()
+  const timeMax = new Date(Date.now() + daysAhead * 86400_000).toISOString()
+
+  const params = new URLSearchParams({
+    timeMin,
+    timeMax,
+    singleEvents: 'true',
+    orderBy: 'startTime',
+    maxResults: '50',
+    fields: 'items(id,summary,start,end)',
+  })
+
+  const res = await fetch(`${CALENDAR_API}/calendars/primary/events?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Google Calendar list error (${res.status}): ${text}`)
+  }
+
+  const data = (await res.json()) as {
+    items?: Array<{
+      id: string
+      summary: string
+      start: { dateTime?: string; date?: string }
+      end: { dateTime?: string; date?: string }
+    }>
+  }
+
+  return (data.items ?? []).map((item) => ({
+    id: item.id,
+    summary: item.summary,
+    start: item.start.dateTime ?? item.start.date ?? '',
+    end: item.end.dateTime ?? item.end.date ?? '',
+  }))
+}

@@ -18,13 +18,17 @@ export const Route = createRootRoute({
   component: RootComponent,
 })
 
+const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})();`
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static theme init script */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="bg-stone-50 text-stone-900">
+      <body className="bg-stone-50 text-stone-900 dark:bg-stone-900 dark:text-stone-50">
         {children}
         <Scripts />
       </body>
@@ -36,7 +40,7 @@ function RootComponent() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <div className="min-h-screen selection:bg-emerald-100 selection:text-emerald-900">
+        <div className="min-h-screen selection:bg-emerald-100 selection:text-emerald-900 dark:selection:bg-emerald-900 dark:selection:text-emerald-100">
           <Outlet />
         </div>
       </AuthProvider>

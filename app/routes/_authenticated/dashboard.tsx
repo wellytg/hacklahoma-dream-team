@@ -10,16 +10,23 @@ import {
   ListChecks,
   LogOut,
   MessageCircle,
+  Pencil,
   Trash2,
   User,
+  X,
   XCircle,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useAuth } from '~/context/AuthContext'
-import { deleteScheduledAction, getScheduledActions } from '../../../server/routes/chat'
+import {
+  deleteScheduledAction,
+  getScheduledActions,
+  updateScheduledAction,
+} from '../../../server/routes/chat'
 import { getProfile } from '../../../server/routes/profile'
 import type { ScheduledAction } from '../../../shared/types'
 import { ActionCardSkeleton } from '../../components/ActionCardSkeleton'
+import { ThemeToggle } from '../../components/ThemeToggle'
 
 export const Route = createFileRoute('/_authenticated/dashboard')({
   component: DashboardPage,
@@ -32,6 +39,8 @@ function DashboardPage() {
   const [loadingActions, setLoadingActions] = useState(true)
   const [checkingProfile, setCheckingProfile] = useState(true)
   const [viewFilter, setViewFilter] = useState<'completed' | 'missed' | null>(null)
+  const [editingActionId, setEditingActionId] = useState<string | null>(null)
+  const [editDateTime, setEditDateTime] = useState('')
 
   // Guard: redirect to intake if no profile
   useEffect(() => {
@@ -64,13 +73,13 @@ function DashboardPage() {
   const statusInfo = (status: string | null) => {
     switch (status) {
       case 'completed':
-        return { color: 'text-emerald-600 bg-emerald-50', Icon: CheckCircle }
+        return { color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20', Icon: CheckCircle }
       case 'missed':
-        return { color: 'text-amber-600 bg-amber-50', Icon: AlertCircle }
+        return { color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20', Icon: AlertCircle }
       case 'cancelled':
-        return { color: 'text-stone-400 bg-stone-100', Icon: XCircle }
+        return { color: 'text-stone-400 bg-stone-100 dark:bg-stone-700', Icon: XCircle }
       default:
-        return { color: 'text-blue-600 bg-blue-50', Icon: Clock }
+        return { color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20', Icon: Clock }
     }
   }
 
@@ -95,26 +104,33 @@ function DashboardPage() {
     <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl sm:text-3xl font-serif font-light text-stone-800">Dashboard</h1>
-          <button
-            type="button"
-            onClick={logout}
-            className="p-2 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
-            title="Log out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+          <h1 className="text-2xl sm:text-3xl font-serif font-light text-stone-800 dark:text-stone-100">
+            Dashboard
+          </h1>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={logout}
+              className="p-2 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 dark:hover:text-stone-300 dark:hover:bg-stone-800 transition-colors"
+              title="Log out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-        <p className="text-stone-500 mb-8">Welcome back. Your journey continues here.</p>
+        <p className="text-stone-500 dark:text-stone-400 mb-8">
+          Welcome back. Your journey continues here.
+        </p>
 
         <div className="grid gap-4 mb-10">
           <Link
             to="/chat"
-            className="block p-6 bg-white rounded-2xl border border-stone-200 hover:border-stone-300 hover:shadow-md transition-all"
+            className="block p-6 bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:shadow-md transition-all"
           >
             <div className="flex items-center gap-3 mb-1">
-              <MessageCircle className="w-5 h-5 text-stone-600" />
-              <h3 className="font-medium text-stone-800">Talk to Sensei</h3>
+              <MessageCircle className="w-5 h-5 text-stone-600 dark:text-stone-400" />
+              <h3 className="font-medium text-stone-800 dark:text-stone-100">Talk to Sensei</h3>
             </div>
             <p className="text-stone-400 text-sm font-light ml-8">
               Start a conversation about what you want to improve.
@@ -123,11 +139,11 @@ function DashboardPage() {
 
           <Link
             to="/profile"
-            className="block p-6 bg-white rounded-2xl border border-stone-200 hover:border-stone-300 hover:shadow-md transition-all"
+            className="block p-6 bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:shadow-md transition-all"
           >
             <div className="flex items-center gap-3 mb-1">
-              <User className="w-5 h-5 text-stone-600" />
-              <h3 className="font-medium text-stone-800">Your Profile</h3>
+              <User className="w-5 h-5 text-stone-600 dark:text-stone-400" />
+              <h3 className="font-medium text-stone-800 dark:text-stone-100">Your Profile</h3>
             </div>
             <p className="text-stone-400 text-sm font-light ml-8">
               View your preferences and conversation style.
@@ -181,12 +197,14 @@ function DashboardPage() {
                       ? () => setViewFilter((prev) => (prev === stat.filter ? null : stat.filter))
                       : undefined
                   }
-                  className={`bg-white rounded-2xl border p-4 flex flex-col items-center gap-1 transition-all ${
-                    isActive ? 'border-stone-400 ring-2 ring-stone-300' : 'border-stone-200'
-                  } ${isClickable ? 'cursor-pointer hover:border-stone-300 hover:shadow-sm' : 'cursor-default'}`}
+                  className={`bg-white dark:bg-stone-800 rounded-2xl border p-4 flex flex-col items-center gap-1 transition-all ${
+                    isActive
+                      ? 'border-stone-400 dark:border-stone-500 ring-2 ring-stone-300 dark:ring-stone-600'
+                      : 'border-stone-200 dark:border-stone-700'
+                  } ${isClickable ? 'cursor-pointer hover:border-stone-300 dark:hover:border-stone-600 hover:shadow-sm' : 'cursor-default'}`}
                 >
                   <stat.Icon className={`w-4 h-4 ${stat.accent}`} />
-                  <span className="text-2xl font-serif font-light text-stone-800">
+                  <span className="text-2xl font-serif font-light text-stone-800 dark:text-stone-100">
                     {stat.value}
                   </span>
                   <span className="text-xs text-stone-400">{stat.label}</span>
@@ -198,7 +216,7 @@ function DashboardPage() {
 
         {/* Actions List */}
         <div>
-          <h2 className="text-lg font-serif font-light text-stone-700 mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-serif font-light text-stone-700 dark:text-stone-200 mb-4 flex items-center gap-2">
             {viewFilter === 'completed' ? (
               <>
                 <CheckCircle className="w-5 h-5" /> Completed Actions
@@ -227,7 +245,7 @@ function DashboardPage() {
                 ))}
               </div>
             ) : actions.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-stone-200 p-10 text-center">
+              <div className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 p-10 text-center">
                 <CalendarDays className="w-10 h-10 text-stone-300 mx-auto mb-3" />
                 <p className="text-stone-500 font-light mb-4">
                   No scheduled actions yet. Start a conversation to set your first goal.
@@ -241,7 +259,7 @@ function DashboardPage() {
                 </Link>
               </div>
             ) : filteredActions.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-stone-200 p-10 text-center">
+              <div className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 p-10 text-center">
                 <CalendarDays className="w-10 h-10 text-stone-300 mx-auto mb-3" />
                 <p className="text-stone-500 font-light">
                   {viewFilter === 'completed'
@@ -261,26 +279,95 @@ function DashboardPage() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      className="bg-white rounded-2xl border border-stone-200 p-5"
+                      className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 p-5"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-stone-800 text-sm">{action.title}</h3>
+                          <h3 className="font-medium text-stone-800 dark:text-stone-100 text-sm">
+                            {action.title}
+                          </h3>
                           {action.description && (
                             <p className="text-stone-400 text-xs mt-1 line-clamp-2">
                               {action.description}
                             </p>
                           )}
                           <div className="flex items-center gap-3 mt-2 text-xs text-stone-500">
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {new Date(action.scheduledAt).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                              })}
-                            </span>
+                            {editingActionId === action.id ? (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="datetime-local"
+                                  value={editDateTime}
+                                  onChange={(e) => setEditDateTime(e.target.value)}
+                                  className="border border-stone-300 dark:border-stone-600 rounded-lg px-2 py-1 text-xs text-stone-700 dark:text-stone-200 bg-white dark:bg-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-300 dark:focus:ring-stone-500"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      const result = await updateScheduledAction({
+                                        data: {
+                                          actionId: action.id,
+                                          scheduledAt: new Date(editDateTime).toISOString(),
+                                        },
+                                      })
+                                      setActions((prev) =>
+                                        prev.map((a) =>
+                                          a.id === action.id
+                                            ? {
+                                                ...a,
+                                                scheduledAt: result.scheduledAt,
+                                                reflectionScheduledAt: result.reflectionScheduledAt,
+                                              }
+                                            : a,
+                                        ),
+                                      )
+                                      setEditingActionId(null)
+                                    } catch {
+                                      // Failed to update
+                                    }
+                                  }}
+                                  className="text-emerald-600 hover:text-emerald-700 font-medium"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingActionId(null)}
+                                  className="text-stone-400 hover:text-stone-600"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {new Date(action.scheduledAt).toLocaleDateString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                  })}
+                                </span>
+                                {(!action.status || action.status === 'pending') && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const d = new Date(action.scheduledAt)
+                                      const local = new Date(
+                                        d.getTime() - d.getTimezoneOffset() * 60_000,
+                                      )
+                                      setEditDateTime(local.toISOString().slice(0, 16))
+                                      setEditingActionId(action.id)
+                                    }}
+                                    className="text-stone-400 hover:text-stone-600 transition-colors"
+                                    title="Reschedule"
+                                  >
+                                    <Pencil className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </>
+                            )}
                             {action.goalArea && (
                               <span className="text-stone-400">{action.goalArea}</span>
                             )}
