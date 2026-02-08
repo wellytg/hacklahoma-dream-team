@@ -22,6 +22,14 @@ llm-dev guidance:
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-02-08
+**Conversation**: 005 - Dashboard filters and calendar link fix
+**Transcript**: [20260208-dashboard-filters-and-calendar-link-fix.json](transcripts/20260208-dashboard-filters-and-calendar-link-fix.json)
+### Fixed
+- Fixed issues in dashboard.tsx
+- Fixed issues in google.ts
+- Fixed issues in tools.ts
+
 ## [1.0.4] - 2026-02-08
 **Conversation**: 004 - Bug Fixes and Feature Polish
 **Transcript**: [20260208-bug-fixes-and-feature-polish.json](transcripts/20260208-bug-fixes-and-feature-polish.json)
