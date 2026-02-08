@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CheckCircle,
   Clock,
+  ExternalLink,
   ListChecks,
   LogOut,
   MessageCircle,
@@ -273,25 +274,44 @@ function DashboardPage() {
               <div className="space-y-3">
                 {filteredActions.map((action, i) => {
                   const { color, Icon: StatusIcon } = statusInfo(action.status)
+                  const isPending = !action.status || action.status === 'pending'
+                  const hasCalendarLink = isPending && !!action.calendarHtmlLink
                   return (
                     <motion.div
                       key={action.id}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      className="bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 p-5"
+                      onClick={
+                        hasCalendarLink
+                          ? () =>
+                              window.open(
+                                action.calendarHtmlLink as string,
+                                '_blank',
+                                'noopener,noreferrer',
+                              )
+                          : undefined
+                      }
+                      className={`bg-white dark:bg-stone-800 rounded-2xl border border-stone-200 dark:border-stone-700 p-5 ${hasCalendarLink ? 'cursor-pointer hover:border-stone-300 dark:hover:border-stone-600 hover:shadow-md transition-all' : ''}`}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-stone-800 dark:text-stone-100 text-sm">
+                          <h3 className="font-medium text-stone-800 dark:text-stone-100 text-sm flex items-center gap-1.5">
                             {action.title}
+                            {hasCalendarLink && (
+                              <ExternalLink className="w-3 h-3 text-stone-300 dark:text-stone-500 flex-shrink-0" />
+                            )}
                           </h3>
                           {action.description && (
                             <p className="text-stone-400 text-xs mt-1 line-clamp-2">
                               {action.description}
                             </p>
                           )}
-                          <div className="flex items-center gap-3 mt-2 text-xs text-stone-500">
+                          {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: stopPropagation for nested interactives */}
+                          <div
+                            className="flex items-center gap-3 mt-2 text-xs text-stone-500"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             {editingActionId === action.id ? (
                               <div className="flex items-center gap-2">
                                 <input
@@ -373,7 +393,11 @@ function DashboardPage() {
                             )}
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-2">
+                        {/* biome-ignore lint/a11y/useKeyWithClickEvents lint/a11y/noStaticElementInteractions: stopPropagation for nested interactives */}
+                        <div
+                          className="flex flex-col items-end gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div className="flex items-center gap-1.5">
                             <span
                               className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${color}`}

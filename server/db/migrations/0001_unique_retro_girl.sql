@@ -1,0 +1,1 @@
+ALTER TABLE `scheduled_actions` ADD `calendar_html_link` text;

@@ -134,6 +134,7 @@ export interface ScheduledAction {
   goalArea: string | null
   status: string | null
   reflectionScheduledAt: string | null
+  calendarHtmlLink: string | null
 }
 
 // --- Reflection Records ---

@@ -90,6 +90,7 @@ export const scheduledActions = sqliteTable(
       .notNull(),
     interactionId: text('interaction_id').references(() => interactions.id),
     calendarEventId: text('calendar_event_id'),
+    calendarHtmlLink: text('calendar_html_link'),
     reflectionEventId: text('reflection_event_id'),
     title: text('title').notNull(),
     description: text('description'),

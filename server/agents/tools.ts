@@ -183,6 +183,7 @@ export async function executeScheduleAction(
     userId,
     interactionId,
     calendarEventId: calendarEvent.id,
+    calendarHtmlLink: `${calendarEvent.htmlLink}&authuser=${encodeURIComponent(email)}`,
     reflectionEventId: reflectionEvent.id,
     title: input.title,
     description: input.description ?? null,

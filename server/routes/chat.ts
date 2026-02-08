@@ -308,7 +308,7 @@ export const getScheduledActions = createServerFn().handler(async () => {
       goalArea: scheduledActions.goalArea,
       status: scheduledActions.status,
       reflectionScheduledAt: scheduledActions.reflectionScheduledAt,
-      calendarEventId: scheduledActions.calendarEventId,
+      calendarHtmlLink: scheduledActions.calendarHtmlLink,
     })
     .from(scheduledActions)
     .where(eq(scheduledActions.userId, userId))
