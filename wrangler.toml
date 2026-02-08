@@ -1,0 +1,25 @@
+name = "sensei-app"
+compatibility_date = "2025-09-02"
+compatibility_flags = ["nodejs_compat"]
+main = "app/server.ts"
+
+[observability]
+enabled = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sensei-db"
+database_id = "2a6cd076-d9ac-4f0f-ac78-f241b44b3656"
+
+[vars]
+ENVIRONMENT = "development"
+
+# Secrets (set via `wrangler secret put`):
+# GOOGLE_CLIENT_ID
+# GOOGLE_CLIENT_SECRET
+# GOOGLE_REDIRECT_URI
+# ANTHROPIC_API_KEY
+# SESSION_SECRET
+
+[triggers]
+crons = ["*/15 * * * *"]

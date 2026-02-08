@@ -1,5 +1,8 @@
 # Project-specific ignores
-{{PROJECT_SPECIFIC_IGNORES}}
+.output/
+.wrangler/
+.worker-configuration.d.ts
+
 
 # Language-specific
 # Python
