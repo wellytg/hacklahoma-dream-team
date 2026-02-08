@@ -126,7 +126,7 @@
 - No one on the team has significant Figma experience
 - Alternatives discussed:
   - Figma AI (free tier may be available but feature limitations unknown)
-  - **Stitch** — a prototyping tool Dallas mentions (someone on the team has tried it)
+  - **Stitch** — a prototyping tool Wellington mentions (someone on the team has tried it)
   - Drawing mockups by hand, photographing them, and feeding the images to AI (Claude, Gemini) to generate code
 
 ### B. AI-Assisted UI Development Approach
@@ -173,7 +173,7 @@
 
 ## VIII. Closing: Agreement on Next Steps
 
-- Zia summarizes the consensus: **"Let's start working on the basic idea and define it"**
+- Mouzam summarizes the consensus: **"Let's start working on the basic idea and define it"**
 - The team aligns on the priority of clearly defining the app concept before jumping into code generation
 - Implicit agreement on the development approach: define first, then leverage AI to build
 

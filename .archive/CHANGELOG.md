@@ -22,6 +22,13 @@ llm-dev guidance:
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-02-07
+**Conversation**: 001 - Project Init and MVP Scoping
+**Transcript**: [20260207-project-init-and-mvp-scoping.json](transcripts/20260207-project-init-and-mvp-scoping.json)
+### Added
+- hacklahoma-links.md
+- mvp-scoping-analysis.md
+
 ## [{{VERSION}}] - YYYY-MM-DD - {{Change Title}}
 **Branch**: `{{branch-name}}`
 **Transcript**: [###  - {{Transcript Title}}](transcripts/YYYYMMDD-transcript-name.json)
