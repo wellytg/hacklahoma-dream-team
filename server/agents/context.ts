@@ -5,16 +5,17 @@
  * strings that are injected into agent system prompts.
  */
 
-import { eq, desc } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm'
+import type { Database } from '../db/index'
 import {
-  users,
-  userProfiles,
+  followUpChecks,
   interactions,
   messages,
-  scheduledActions,
   reflectionRecords,
-} from '../db/schema';
-import type { Database } from '../db/index';
+  scheduledActions,
+  userProfiles,
+  users,
+} from '../db/schema'
 
 // ---------------------------------------------------------------------------
 // Sensei context
@@ -24,11 +25,8 @@ import type { Database } from '../db/index';
  * Build context for the Sensei agent: user profile, recent interactions
  * (with summaries), recent scheduled actions, and recent reflections.
  */
-export async function buildSenseiContext(
-  db: Database,
-  userId: string,
-): Promise<string> {
-  const [user, profile, recentInteractions, recentActions, recentReflections] =
+export async function buildSenseiContext(db: Database, userId: string): Promise<string> {
+  const [user, profile, recentInteractions, recentActions, recentReflections, missedFollowUps] =
     await Promise.all([
       db.select({ name: users.name }).from(users).where(eq(users.id, userId)).get(),
       db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).get(),
@@ -55,41 +53,54 @@ export async function buildSenseiContext(
         .where(eq(reflectionRecords.userId, userId))
         .orderBy(desc(reflectionRecords.createdAt))
         .limit(5),
-    ]);
+      // Missed reflections: follow-up checks that executed but found no reflection
+      db
+        .select({
+          actionId: followUpChecks.actionId,
+          actionTitle: scheduledActions.title,
+          actionGoal: scheduledActions.goalArea,
+          scheduledAt: scheduledActions.scheduledAt,
+        })
+        .from(followUpChecks)
+        .innerJoin(scheduledActions, eq(followUpChecks.actionId, scheduledActions.id))
+        .where(and(eq(followUpChecks.userId, userId), eq(followUpChecks.reflectionFound, 0)))
+        .orderBy(desc(followUpChecks.executedAt))
+        .limit(5),
+    ])
 
-  const sections: string[] = [];
+  const sections: string[] = []
 
   // User name
   if (user?.name) {
-    sections.push(`## User\nName: ${user.name}`);
+    sections.push(`## User\nName: ${user.name}`)
   }
 
   // Profile
   if (profile) {
-    const profileLines: string[] = ['## User Profile'];
-    if (profile.intent) profileLines.push(`Intent: ${profile.intent}`);
-    if (profile.mode) profileLines.push(`Persona mode: ${profile.mode}`);
-    if (profile.drains) profileLines.push(`Energy drains: ${profile.drains}`);
-    if (profile.capabilities) profileLines.push(`Capabilities: ${profile.capabilities}`);
-    if (profile.avoidanceRoot) profileLines.push(`Avoidance root: ${profile.avoidanceRoot}`);
-    if (profile.structurePref) profileLines.push(`Structure preference: ${profile.structurePref}`);
-    if (profile.valueAlignment) profileLines.push(`Value alignment: ${profile.valueAlignment}`);
-    if (profile.focusTime) profileLines.push(`Focus time: ${profile.focusTime}`);
-    if (profile.workBurst) profileLines.push(`Work burst style: ${profile.workBurst}`);
-    if (profile.recovery) profileLines.push(`Recovery style: ${profile.recovery}`);
-    if (profile.learnStyle) profileLines.push(`Learning style: ${profile.learnStyle}`);
-    if (profile.feedbackPref) profileLines.push(`Feedback preference: ${profile.feedbackPref}`);
-    if (profile.reminderPref) profileLines.push(`Reminder preference: ${profile.reminderPref}`);
-    if (profile.resolvedState) profileLines.push(`Resolved state: ${profile.resolvedState}`);
-    sections.push(profileLines.join('\n'));
+    const profileLines: string[] = ['## User Profile']
+    if (profile.intent) profileLines.push(`Intent: ${profile.intent}`)
+    if (profile.mode) profileLines.push(`Persona mode: ${profile.mode}`)
+    if (profile.drains) profileLines.push(`Energy drains: ${profile.drains}`)
+    if (profile.capabilities) profileLines.push(`Capabilities: ${profile.capabilities}`)
+    if (profile.avoidanceRoot) profileLines.push(`Avoidance root: ${profile.avoidanceRoot}`)
+    if (profile.structurePref) profileLines.push(`Structure preference: ${profile.structurePref}`)
+    if (profile.valueAlignment) profileLines.push(`Value alignment: ${profile.valueAlignment}`)
+    if (profile.focusTime) profileLines.push(`Focus time: ${profile.focusTime}`)
+    if (profile.workBurst) profileLines.push(`Work burst style: ${profile.workBurst}`)
+    if (profile.recovery) profileLines.push(`Recovery style: ${profile.recovery}`)
+    if (profile.learnStyle) profileLines.push(`Learning style: ${profile.learnStyle}`)
+    if (profile.feedbackPref) profileLines.push(`Feedback preference: ${profile.feedbackPref}`)
+    if (profile.reminderPref) profileLines.push(`Reminder preference: ${profile.reminderPref}`)
+    if (profile.resolvedState) profileLines.push(`Resolved state: ${profile.resolvedState}`)
+    sections.push(profileLines.join('\n'))
   }
 
   // Recent interactions
   if (recentInteractions.length > 0) {
     const lines = recentInteractions.map(
       (i) => `- [${i.type}] ${i.createdAt}${i.summary ? `: ${i.summary}` : ''}`,
-    );
-    sections.push(`## Recent Interactions\n${lines.join('\n')}`);
+    )
+    sections.push(`## Recent Interactions\n${lines.join('\n')}`)
   }
 
   // Recent scheduled actions
@@ -97,8 +108,8 @@ export async function buildSenseiContext(
     const lines = recentActions.map(
       (a) =>
         `- ${a.title} (${a.status}) — scheduled ${a.scheduledAt}${a.goalArea ? ` [${a.goalArea}]` : ''}`,
-    );
-    sections.push(`## Recent Scheduled Actions\n${lines.join('\n')}`);
+    )
+    sections.push(`## Recent Scheduled Actions\n${lines.join('\n')}`)
   }
 
   // Recent reflections
@@ -106,11 +117,21 @@ export async function buildSenseiContext(
     const lines = recentReflections.map(
       (r) =>
         `- Action ${r.actionId}: completed=${r.completed}, tone=${r.emotionalTone ?? 'unknown'}${r.userSummary ? ` — "${r.userSummary}"` : ''}`,
-    );
-    sections.push(`## Recent Reflections\n${lines.join('\n')}`);
+    )
+    sections.push(`## Recent Reflections\n${lines.join('\n')}`)
   }
 
-  return sections.join('\n\n');
+  // Missed reflections (actions where the user never reflected)
+  if (missedFollowUps.length > 0) {
+    const lines = missedFollowUps.map(
+      (m) => `- "${m.actionTitle}" (${m.actionGoal ?? 'general'}) — scheduled ${m.scheduledAt}`,
+    )
+    sections.push(
+      `## Missed Reflections\nThe user did not reflect on these recent actions:\n${lines.join('\n')}`,
+    )
+  }
+
+  return sections.join('\n\n')
 }
 
 // ---------------------------------------------------------------------------
@@ -130,21 +151,21 @@ export async function buildReflectionContext(
     db.select({ name: users.name }).from(users).where(eq(users.id, userId)).get(),
     db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).get(),
     db.select().from(scheduledActions).where(eq(scheduledActions.id, actionId)).get(),
-  ]);
+  ])
 
-  const sections: string[] = [];
+  const sections: string[] = []
 
   if (user?.name) {
-    sections.push(`## User\nName: ${user.name}`);
+    sections.push(`## User\nName: ${user.name}`)
   }
 
   if (profile) {
-    const profileLines: string[] = ['## User Profile'];
-    if (profile.mode) profileLines.push(`Persona mode: ${profile.mode}`);
-    if (profile.feedbackPref) profileLines.push(`Feedback preference: ${profile.feedbackPref}`);
-    if (profile.avoidanceRoot) profileLines.push(`Avoidance root: ${profile.avoidanceRoot}`);
-    if (profile.resolvedState) profileLines.push(`Resolved state: ${profile.resolvedState}`);
-    sections.push(profileLines.join('\n'));
+    const profileLines: string[] = ['## User Profile']
+    if (profile.mode) profileLines.push(`Persona mode: ${profile.mode}`)
+    if (profile.feedbackPref) profileLines.push(`Feedback preference: ${profile.feedbackPref}`)
+    if (profile.avoidanceRoot) profileLines.push(`Avoidance root: ${profile.avoidanceRoot}`)
+    if (profile.resolvedState) profileLines.push(`Resolved state: ${profile.resolvedState}`)
+    sections.push(profileLines.join('\n'))
   }
 
   if (action) {
@@ -158,7 +179,7 @@ export async function buildReflectionContext(
         `Goal context: ${action.goalContext ?? 'N/A'}`,
         `Status: ${action.status}`,
       ].join('\n'),
-    );
+    )
 
     // Load messages from the interaction that created this action
     if (action.interactionId) {
@@ -167,14 +188,14 @@ export async function buildReflectionContext(
         .from(messages)
         .where(eq(messages.interactionId, action.interactionId))
         .orderBy(messages.createdAt)
-        .limit(20);
+        .limit(20)
 
       if (msgs.length > 0) {
-        const lines = msgs.map((m) => `[${m.role}]: ${m.content}`);
-        sections.push(`## Original Conversation\n${lines.join('\n')}`);
+        const lines = msgs.map((m) => `[${m.role}]: ${m.content}`)
+        sections.push(`## Original Conversation\n${lines.join('\n')}`)
       }
     }
   }
 
-  return sections.join('\n\n');
+  return sections.join('\n\n')
 }

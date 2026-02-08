@@ -1,11 +1,10 @@
-
-import React from 'react';
-import { motion } from 'framer-motion';
-import { useIntake } from '~/context/IntakeContext';
+import { motion } from 'framer-motion'
+import type React from 'react'
+import { useIntake } from '~/context/IntakeContext'
 
 export const ProgressBar: React.FC = () => {
-  const { currentStep, totalSteps } = useIntake();
-  const progress = (currentStep / totalSteps) * 100;
+  const { currentStep, totalSteps } = useIntake()
+  const progress = (currentStep / totalSteps) * 100
 
   return (
     <div className="w-full h-1 bg-stone-200 rounded-full overflow-hidden mb-12">
@@ -16,5 +15,5 @@ export const ProgressBar: React.FC = () => {
         transition={{ duration: 0.5, ease: 'easeInOut' }}
       />
     </div>
-  );
-};
+  )
+}

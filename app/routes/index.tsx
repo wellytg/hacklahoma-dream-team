@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
+import { useEffect } from 'react'
 import { useAuth } from '~/context/AuthContext'
 
 export const Route = createFileRoute('/')({
@@ -40,17 +40,20 @@ function LandingPage() {
 
         <h1 className="text-5xl font-serif font-light text-stone-800 mb-4">Sensei</h1>
         <p className="text-stone-500 text-lg leading-relaxed font-light mb-12">
-          Your personal guide to building better habits, managing energy, and making progress that sticks.
+          Your personal guide to building better habits, managing energy, and making progress that
+          sticks.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
+            type="button"
             onClick={login}
             className="px-10 py-4 bg-stone-900 text-white rounded-full font-medium hover:bg-stone-800 transition-colors shadow-lg shadow-stone-200"
           >
             Help me help you
           </button>
           <button
+            type="button"
             onClick={login}
             className="px-10 py-4 bg-white text-stone-700 rounded-full font-medium border border-stone-200 hover:border-stone-300 hover:shadow-md transition-all"
           >

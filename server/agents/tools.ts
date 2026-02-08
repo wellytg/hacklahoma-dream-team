@@ -6,11 +6,11 @@
  * corresponding function and feeds the result back.
  */
 
-import type Anthropic from '@anthropic-ai/sdk';
-import { eq } from 'drizzle-orm';
-import { scheduledActions, reflectionRecords, followUpChecks } from '../db/schema';
-import { getValidAccessToken, createCalendarEvent } from '../calendar/google';
-import type { Database } from '../db/index';
+import type Anthropic from '@anthropic-ai/sdk'
+import { eq } from 'drizzle-orm'
+import { createCalendarEvent, getValidAccessToken } from '../calendar/google'
+import type { Database } from '../db/index'
+import { followUpChecks, reflectionRecords, scheduledActions } from '../db/schema'
 
 // ---------------------------------------------------------------------------
 // Tool schemas (Anthropic tool format)
@@ -20,7 +20,7 @@ export const SENSEI_TOOLS: Anthropic.Tool[] = [
   {
     name: 'schedule_action',
     description:
-      'Schedule a concrete action on the user\'s Google Calendar. ' +
+      "Schedule a concrete action on the user's Google Calendar. " +
       'Also creates a reflection event and a follow-up check. ' +
       'Only call this when the user has explicitly agreed to a specific action and time.',
     input_schema: {
@@ -32,7 +32,7 @@ export const SENSEI_TOOLS: Anthropic.Tool[] = [
         },
         description: {
           type: 'string',
-          description: 'Longer description connecting the action to the user\'s goal',
+          description: "Longer description connecting the action to the user's goal",
         },
         startDateTime: {
           type: 'string',
@@ -52,14 +52,13 @@ export const SENSEI_TOOLS: Anthropic.Tool[] = [
         },
         reflectionDelayHours: {
           type: 'number',
-          description:
-            'Hours after the action ends to schedule the reflection event (default 12)',
+          description: 'Hours after the action ends to schedule the reflection event (default 12)',
         },
       },
       required: ['title', 'startDateTime'],
     },
   },
-];
+]
 
 export const REFLECTION_TOOLS: Anthropic.Tool[] = [
   {
@@ -77,7 +76,7 @@ export const REFLECTION_TOOLS: Anthropic.Tool[] = [
         },
         userSummary: {
           type: 'string',
-          description: 'The user\'s own words about how it went',
+          description: "The user's own words about how it went",
         },
         barriers: {
           type: 'string',
@@ -101,29 +100,29 @@ export const REFLECTION_TOOLS: Anthropic.Tool[] = [
       required: ['completed'],
     },
   },
-];
+]
 
 // ---------------------------------------------------------------------------
 // Tool input types
 // ---------------------------------------------------------------------------
 
 interface ScheduleActionInput {
-  title: string;
-  description?: string;
-  startDateTime: string;
-  durationMinutes?: number;
-  goalArea?: string;
-  goalContext?: string;
-  reflectionDelayHours?: number;
+  title: string
+  description?: string
+  startDateTime: string
+  durationMinutes?: number
+  goalArea?: string
+  goalContext?: string
+  reflectionDelayHours?: number
 }
 
 interface CompleteReflectionInput {
-  completed: 'yes' | 'no' | 'partial';
-  userSummary?: string;
-  barriers?: string;
-  emotionalTone?: 'positive' | 'neutral' | 'negative' | 'mixed';
-  wantsToRepeat?: 'yes' | 'no' | 'unsure';
-  agentNotes?: string;
+  completed: 'yes' | 'no' | 'partial'
+  userSummary?: string
+  barriers?: string
+  emotionalTone?: 'positive' | 'neutral' | 'negative' | 'mixed'
+  wantsToRepeat?: 'yes' | 'no' | 'unsure'
+  agentNotes?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -131,8 +130,8 @@ interface CompleteReflectionInput {
 // ---------------------------------------------------------------------------
 
 interface CalendarEnv {
-  GOOGLE_CLIENT_ID: string;
-  GOOGLE_CLIENT_SECRET: string;
+  GOOGLE_CLIENT_ID: string
+  GOOGLE_CLIENT_SECRET: string
 }
 
 /**
@@ -149,16 +148,16 @@ export async function executeScheduleAction(
   input: ScheduleActionInput,
   cfEnv: CalendarEnv,
 ): Promise<{ actionId: string; calendarEventId: string }> {
-  const duration = input.durationMinutes ?? 30;
-  const reflectionDelay = input.reflectionDelayHours ?? 12;
+  const duration = input.durationMinutes ?? 30
+  const reflectionDelay = input.reflectionDelayHours ?? 12
 
-  const startDate = new Date(input.startDateTime);
-  const endDate = new Date(startDate.getTime() + duration * 60_000);
-  const reflectionDate = new Date(endDate.getTime() + reflectionDelay * 3600_000);
-  const followUpDate = new Date(reflectionDate.getTime() + 2 * 3600_000); // 2h after reflection
+  const startDate = new Date(input.startDateTime)
+  const endDate = new Date(startDate.getTime() + duration * 60_000)
+  const reflectionDate = new Date(endDate.getTime() + reflectionDelay * 3600_000)
+  const followUpDate = new Date(reflectionDate.getTime() + 2 * 3600_000) // 2h after reflection
 
   // Get a valid access token
-  const accessToken = await getValidAccessToken(db, userId, cfEnv);
+  const accessToken = await getValidAccessToken(db, userId, cfEnv)
 
   // Create action calendar event
   const calendarEventId = await createCalendarEvent(accessToken, {
@@ -166,19 +165,19 @@ export async function executeScheduleAction(
     description: input.description,
     startDateTime: startDate.toISOString(),
     endDateTime: endDate.toISOString(),
-  });
+  })
 
   // Create reflection calendar event
-  const reflectionEndDate = new Date(reflectionDate.getTime() + 15 * 60_000);
+  const reflectionEndDate = new Date(reflectionDate.getTime() + 15 * 60_000)
   const reflectionEventId = await createCalendarEvent(accessToken, {
     summary: `Reflect: ${input.title}`,
     description: `Time to reflect on "${input.title}". Open Sensei to check in.`,
     startDateTime: reflectionDate.toISOString(),
     endDateTime: reflectionEndDate.toISOString(),
-  });
+  })
 
   // Insert scheduled action
-  const actionId = crypto.randomUUID();
+  const actionId = crypto.randomUUID()
   await db.insert(scheduledActions).values({
     id: actionId,
     userId,
@@ -194,7 +193,7 @@ export async function executeScheduleAction(
     reflectionScheduledAt: reflectionDate.toISOString(),
     followUpScheduledAt: followUpDate.toISOString(),
     status: 'pending',
-  });
+  })
 
   // Insert follow-up check
   await db.insert(followUpChecks).values({
@@ -202,9 +201,9 @@ export async function executeScheduleAction(
     userId,
     actionId,
     scheduledAt: followUpDate.toISOString(),
-  });
+  })
 
-  return { actionId, calendarEventId };
+  return { actionId, calendarEventId }
 }
 
 /**
@@ -219,7 +218,7 @@ export async function executeCompleteReflection(
   interactionId: string,
   input: CompleteReflectionInput,
 ): Promise<{ reflectionId: string }> {
-  const reflectionId = crypto.randomUUID();
+  const reflectionId = crypto.randomUUID()
 
   await db.insert(reflectionRecords).values({
     id: reflectionId,
@@ -232,14 +231,14 @@ export async function executeCompleteReflection(
     emotionalTone: input.emotionalTone ?? null,
     wantsToRepeat: input.wantsToRepeat ?? null,
     agentNotes: input.agentNotes ?? null,
-  });
+  })
 
   // Mark the action as completed or missed based on reflection
-  const actionStatus = input.completed === 'no' ? 'missed' : 'completed';
+  const actionStatus = input.completed === 'no' ? 'missed' : 'completed'
   await db
     .update(scheduledActions)
     .set({ status: actionStatus })
-    .where(eq(scheduledActions.id, actionId));
+    .where(eq(scheduledActions.id, actionId))
 
-  return { reflectionId };
+  return { reflectionId }
 }

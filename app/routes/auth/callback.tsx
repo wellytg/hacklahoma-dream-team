@@ -6,14 +6,14 @@
  * redirect based on profile state.
  */
 
-import React, { useEffect, useState } from 'react';
-import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router';
-import { handleAuthCallback } from '../../../server/routes/auth';
-import { getProfile } from '../../../server/routes/profile';
+import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { handleAuthCallback } from '../../../server/routes/auth'
+import { getProfile } from '../../../server/routes/profile'
 
 interface CallbackSearch {
-  code?: string;
-  error?: string;
+  code?: string
+  error?: string
 }
 
 export const Route = createFileRoute('/auth/callback')({
@@ -22,25 +22,25 @@ export const Route = createFileRoute('/auth/callback')({
     error: typeof search.error === 'string' ? search.error : undefined,
   }),
   component: CallbackPage,
-});
+})
 
 function CallbackPage() {
-  const { code, error } = useSearch({ from: '/auth/callback' });
-  const navigate = useNavigate();
-  const [status, setStatus] = useState<'processing' | 'error'>('processing');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { code, error } = useSearch({ from: '/auth/callback' })
+  const navigate = useNavigate()
+  const [status, setStatus] = useState<'processing' | 'error'>('processing')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (error) {
-      setStatus('error');
-      setErrorMessage(`Google authorization failed: ${error}`);
-      return;
+      setStatus('error')
+      setErrorMessage(`Google authorization failed: ${error}`)
+      return
     }
 
     if (!code) {
-      setStatus('error');
-      setErrorMessage('Missing authorization code.');
-      return;
+      setStatus('error')
+      setErrorMessage('Missing authorization code.')
+      return
     }
 
     handleAuthCallback({ data: { code } })
@@ -48,23 +48,23 @@ function CallbackPage() {
         // Session cookie is set by the server response.
         // Check profile to decide where to send the user.
         try {
-          const { profile } = await getProfile();
+          const { profile } = await getProfile()
           if (profile?.intakeCompletedAt) {
-            navigate({ to: '/dashboard' });
+            navigate({ to: '/dashboard' })
           } else {
-            navigate({ to: '/intake' });
+            navigate({ to: '/intake' })
           }
         } catch {
           // Profile check failed — default to intake
-          navigate({ to: '/intake' });
+          navigate({ to: '/intake' })
         }
       })
       .catch((err: unknown) => {
-        console.error('Auth callback failed:', err);
-        setStatus('error');
-        setErrorMessage('Login failed. Please try again.');
-      });
-  }, [code, error, navigate]);
+        console.error('Auth callback failed:', err)
+        setStatus('error')
+        setErrorMessage('Login failed. Please try again.')
+      })
+  }, [code, error, navigate])
 
   if (status === 'error') {
     return (
@@ -74,7 +74,7 @@ function CallbackPage() {
           Back to home
         </a>
       </div>
-    );
+    )
   }
 
   return (
@@ -84,5 +84,5 @@ function CallbackPage() {
         <p>Completing sign-in&hellip;</p>
       </div>
     </div>
-  );
+  )
 }

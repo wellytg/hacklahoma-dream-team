@@ -1,8 +1,8 @@
 import { createFileRoute, useSearch } from '@tanstack/react-router'
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Loader2, CalendarCheck } from 'lucide-react'
-import { startSession, sendMessage } from '../../../server/routes/chat'
+import { AnimatePresence, motion } from 'framer-motion'
+import { CalendarCheck, Loader2, Send } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { sendMessage, startSession } from '../../../server/routes/chat'
 import type { ChatMessage } from '../../../shared/types'
 
 interface ChatSearch {
@@ -27,7 +27,9 @@ function ChatPage() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [interactionId, setInteractionId] = useState<string | null>(null)
-  const [scheduledActions, setScheduledActions] = useState<Array<{ title: string }>>([])
+  const [scheduledActions, setScheduledActions] = useState<
+    Array<{ actionId: string; title: string }>
+  >([])
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -35,7 +37,7 @@ function ChatPage() {
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [msgs, loading])
+  }, [])
 
   // Initialize session on mount
   useEffect(() => {
@@ -118,9 +120,7 @@ function ChatPage() {
         <div className="max-w-3xl mx-auto px-6 py-8 space-y-4">
           {msgs.length === 0 && !loading && (
             <p className="text-stone-400 text-center py-12 font-light">
-              {interactionId
-                ? 'Send a message to begin.'
-                : 'Starting session...'}
+              {interactionId ? 'Send a message to begin.' : 'Starting session...'}
             </p>
           )}
 
@@ -150,9 +150,9 @@ function ChatPage() {
 
           {/* Scheduled action confirmations */}
           <AnimatePresence>
-            {scheduledActions.map((action, i) => (
+            {scheduledActions.map((action) => (
               <motion.div
-                key={`action-${i}`}
+                key={action.actionId}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="flex justify-start"
@@ -203,6 +203,7 @@ function ChatPage() {
               }}
             />
             <button
+              type="button"
               onClick={handleSend}
               disabled={!input.trim() || !interactionId || loading}
               className="shrink-0 rounded-xl bg-stone-800 p-3 text-white hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"

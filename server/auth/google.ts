@@ -5,41 +5,36 @@
  * Requires env vars: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI.
  */
 
-const SCOPES = [
-  'openid',
-  'email',
-  'profile',
-  'https://www.googleapis.com/auth/calendar',
-].join(' ');
+const SCOPES = ['openid', 'email', 'profile', 'https://www.googleapis.com/auth/calendar'].join(' ')
 
-const AUTHORIZATION_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
-const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
-const USERINFO_ENDPOINT = 'https://www.googleapis.com/oauth2/v3/userinfo';
+const AUTHORIZATION_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth'
+const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token'
+const USERINFO_ENDPOINT = 'https://www.googleapis.com/oauth2/v3/userinfo'
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface GoogleTokenResponse {
-  access_token: string;
-  refresh_token?: string;
-  expires_in: number;
-  id_token: string;
-  token_type: string;
-  scope: string;
+  access_token: string
+  refresh_token?: string
+  expires_in: number
+  id_token: string
+  token_type: string
+  scope: string
 }
 
 export interface GoogleUserInfo {
-  sub: string; // Google user ID
-  email: string;
-  name: string;
-  picture?: string;
+  sub: string // Google user ID
+  email: string
+  name: string
+  picture?: string
 }
 
 export interface TokenEnv {
-  clientId: string;
-  clientSecret: string;
-  redirectUri: string;
+  clientId: string
+  clientSecret: string
+  redirectUri: string
 }
 
 // ---------------------------------------------------------------------------
@@ -63,13 +58,13 @@ export function getAuthorizationUrl(
     scope: SCOPES,
     access_type: 'offline',
     prompt: 'consent',
-  });
+  })
 
   if (state) {
-    params.set('state', state);
+    params.set('state', state)
   }
 
-  return `${AUTHORIZATION_ENDPOINT}?${params.toString()}`;
+  return `${AUTHORIZATION_ENDPOINT}?${params.toString()}`
 }
 
 // ---------------------------------------------------------------------------
@@ -90,20 +85,20 @@ export async function exchangeCodeForTokens(
     client_secret: env.clientSecret,
     redirect_uri: env.redirectUri,
     grant_type: 'authorization_code',
-  });
+  })
 
   const res = await fetch(TOKEN_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
-  });
+  })
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Google token exchange failed (${res.status}): ${text}`);
+    const text = await res.text()
+    throw new Error(`Google token exchange failed (${res.status}): ${text}`)
   }
 
-  return res.json() as Promise<GoogleTokenResponse>;
+  return res.json() as Promise<GoogleTokenResponse>
 }
 
 // ---------------------------------------------------------------------------
@@ -122,20 +117,20 @@ export async function refreshAccessToken(
     client_id: config.clientId,
     client_secret: config.clientSecret,
     grant_type: 'refresh_token',
-  });
+  })
 
   const res = await fetch(TOKEN_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
-  });
+  })
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Google token refresh failed (${res.status}): ${text}`);
+    const text = await res.text()
+    throw new Error(`Google token refresh failed (${res.status}): ${text}`)
   }
 
-  return res.json() as Promise<{ access_token: string; expires_in: number }>;
+  return res.json() as Promise<{ access_token: string; expires_in: number }>
 }
 
 // ---------------------------------------------------------------------------
@@ -148,14 +143,14 @@ export async function refreshAccessToken(
 export async function getUserInfo(accessToken: string): Promise<GoogleUserInfo> {
   const res = await fetch(USERINFO_ENDPOINT, {
     headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  })
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Google userinfo request failed (${res.status}): ${text}`);
+    const text = await res.text()
+    throw new Error(`Google userinfo request failed (${res.status}): ${text}`)
   }
 
-  return res.json() as Promise<GoogleUserInfo>;
+  return res.json() as Promise<GoogleUserInfo>
 }
 
 // ---------------------------------------------------------------------------
@@ -169,23 +164,23 @@ export async function getUserInfo(accessToken: string): Promise<GoogleUserInfo> 
  * from Google's token endpoint over HTTPS in this same request flow.
  */
 export function parseIdToken(idToken: string): {
-  sub: string;
-  email: string;
-  name: string;
+  sub: string
+  email: string
+  name: string
 } {
-  const parts = idToken.split('.');
+  const parts = idToken.split('.')
   if (parts.length !== 3) {
-    throw new Error('Invalid JWT: expected 3 segments');
+    throw new Error('Invalid JWT: expected 3 segments')
   }
 
   // Base64url -> Base64 -> decode
-  const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-  const json = atob(base64);
-  const payload = JSON.parse(json);
+  const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+  const json = atob(base64)
+  const payload = JSON.parse(json)
 
   return {
     sub: payload.sub,
     email: payload.email,
     name: payload.name,
-  };
+  }
 }

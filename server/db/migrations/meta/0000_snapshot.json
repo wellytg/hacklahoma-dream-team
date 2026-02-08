@@ -89,16 +89,12 @@
       "indexes": {
         "follow_up_checks_user_id_idx": {
           "name": "follow_up_checks_user_id_idx",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         },
         "follow_up_checks_action_id_idx": {
           "name": "follow_up_checks_action_id_idx",
-          "columns": [
-            "action_id"
-          ],
+          "columns": ["action_id"],
           "isUnique": false
         }
       },
@@ -107,12 +103,8 @@
           "name": "follow_up_checks_user_id_users_id_fk",
           "tableFrom": "follow_up_checks",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -120,12 +112,8 @@
           "name": "follow_up_checks_action_id_scheduled_actions_id_fk",
           "tableFrom": "follow_up_checks",
           "tableTo": "scheduled_actions",
-          "columnsFrom": [
-            "action_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["action_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -192,9 +180,7 @@
       "indexes": {
         "interactions_user_id_idx": {
           "name": "interactions_user_id_idx",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -203,12 +189,8 @@
           "name": "interactions_user_id_users_id_fk",
           "tableFrom": "interactions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -260,9 +242,7 @@
       "indexes": {
         "messages_interaction_id_idx": {
           "name": "messages_interaction_id_idx",
-          "columns": [
-            "interaction_id"
-          ],
+          "columns": ["interaction_id"],
           "isUnique": false
         }
       },
@@ -271,12 +251,8 @@
           "name": "messages_interaction_id_interactions_id_fk",
           "tableFrom": "messages",
           "tableTo": "interactions",
-          "columnsFrom": [
-            "interaction_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["interaction_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -370,16 +346,12 @@
       "indexes": {
         "reflection_records_user_id_idx": {
           "name": "reflection_records_user_id_idx",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         },
         "reflection_records_action_id_idx": {
           "name": "reflection_records_action_id_idx",
-          "columns": [
-            "action_id"
-          ],
+          "columns": ["action_id"],
           "isUnique": false
         }
       },
@@ -388,12 +360,8 @@
           "name": "reflection_records_user_id_users_id_fk",
           "tableFrom": "reflection_records",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -401,12 +369,8 @@
           "name": "reflection_records_action_id_scheduled_actions_id_fk",
           "tableFrom": "reflection_records",
           "tableTo": "scheduled_actions",
-          "columnsFrom": [
-            "action_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["action_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -414,12 +378,8 @@
           "name": "reflection_records_interaction_id_interactions_id_fk",
           "tableFrom": "reflection_records",
           "tableTo": "interactions",
-          "columnsFrom": [
-            "interaction_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["interaction_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -543,16 +503,12 @@
       "indexes": {
         "scheduled_actions_user_id_idx": {
           "name": "scheduled_actions_user_id_idx",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         },
         "scheduled_actions_status_idx": {
           "name": "scheduled_actions_status_idx",
-          "columns": [
-            "status"
-          ],
+          "columns": ["status"],
           "isUnique": false
         }
       },
@@ -561,12 +517,8 @@
           "name": "scheduled_actions_user_id_users_id_fk",
           "tableFrom": "scheduled_actions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -574,12 +526,8 @@
           "name": "scheduled_actions_interaction_id_interactions_id_fk",
           "tableFrom": "scheduled_actions",
           "tableTo": "interactions",
-          "columnsFrom": [
-            "interaction_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["interaction_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -750,9 +698,7 @@
       "indexes": {
         "user_profiles_user_id_unique": {
           "name": "user_profiles_user_id_unique",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": true
         }
       },
@@ -761,12 +707,8 @@
           "name": "user_profiles_user_id_users_id_fk",
           "tableFrom": "user_profiles",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -847,16 +789,12 @@
       "indexes": {
         "users_email_unique": {
           "name": "users_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "isUnique": true
         },
         "users_google_id_unique": {
           "name": "users_google_id_unique",
-          "columns": [
-            "google_id"
-          ],
+          "columns": ["google_id"],
           "isUnique": true
         }
       },

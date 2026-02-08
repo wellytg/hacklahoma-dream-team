@@ -6,10 +6,10 @@
  * the server records the reflection data.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
-import { buildReflectionContext } from './context';
-import { REFLECTION_TOOLS, executeCompleteReflection } from './tools';
-import type { Database } from '../db/index';
+import Anthropic from '@anthropic-ai/sdk'
+import type { Database } from '../db/index'
+import { buildReflectionContext } from './context'
+import { executeCompleteReflection, REFLECTION_TOOLS } from './tools'
 
 // ---------------------------------------------------------------------------
 // System prompt
@@ -85,19 +85,19 @@ record the outcome. End with something forward-looking.
 - Never give new advice or suggest new actions (that's the Sensei's role)
 - Never extend the conversation beyond what's needed
 - Never fabricate or assume details about how the action went
-- Never reference system internals (database records, profiles, etc.)`;
+- Never reference system internals (database records, profiles, etc.)`
 
 // ---------------------------------------------------------------------------
 // Agent runner
 // ---------------------------------------------------------------------------
 
 interface AgentEnv {
-  ANTHROPIC_API_KEY: string;
+  ANTHROPIC_API_KEY: string
 }
 
 export interface ReflectionResult {
-  text: string;
-  reflectionRecorded: boolean;
+  text: string
+  reflectionRecorded: boolean
 }
 
 /**
@@ -111,20 +111,20 @@ export async function runReflectionTurn(
   conversationMessages: Array<{ role: 'user' | 'assistant'; content: string }>,
   cfEnv: AgentEnv,
 ): Promise<ReflectionResult> {
-  const client = new Anthropic({ apiKey: cfEnv.ANTHROPIC_API_KEY });
+  const client = new Anthropic({ apiKey: cfEnv.ANTHROPIC_API_KEY })
 
   // Build action-specific context
-  const context = await buildReflectionContext(db, userId, actionId);
+  const context = await buildReflectionContext(db, userId, actionId)
   const systemPrompt = context
     ? `${REFLECTION_SYSTEM_PROMPT}\n\n---\n\n# CONTEXT\n\n${context}`
-    : REFLECTION_SYSTEM_PROMPT;
+    : REFLECTION_SYSTEM_PROMPT
 
-  let reflectionRecorded = false;
+  let reflectionRecorded = false
 
   let claudeMessages: Anthropic.MessageParam[] = conversationMessages.map((m) => ({
     role: m.role,
     content: m.content,
-  }));
+  }))
 
   // Tool-use loop (max 3 iterations)
   for (let i = 0; i < 3; i++) {
@@ -134,21 +134,27 @@ export async function runReflectionTurn(
       system: systemPrompt,
       tools: REFLECTION_TOOLS,
       messages: claudeMessages,
-    });
+    })
 
     const toolUseBlocks = response.content.filter(
-      (block): block is Anthropic.ContentBlockParam & { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> } =>
-        block.type === 'tool_use',
-    );
+      (
+        block,
+      ): block is Anthropic.ContentBlockParam & {
+        type: 'tool_use'
+        id: string
+        name: string
+        input: Record<string, unknown>
+      } => block.type === 'tool_use',
+    )
 
     if (toolUseBlocks.length === 0) {
       const textBlock = response.content.find(
         (block): block is Anthropic.TextBlock => block.type === 'text',
-      );
-      return { text: textBlock?.text ?? '', reflectionRecorded };
+      )
+      return { text: textBlock?.text ?? '', reflectionRecorded }
     }
 
-    const toolResults: Anthropic.ToolResultBlockParam[] = [];
+    const toolResults: Anthropic.ToolResultBlockParam[] = []
     for (const toolBlock of toolUseBlocks) {
       if (toolBlock.name === 'complete_reflection') {
         try {
@@ -158,13 +164,13 @@ export async function runReflectionTurn(
             actionId,
             interactionId,
             toolBlock.input as unknown as Parameters<typeof executeCompleteReflection>[4],
-          );
-          reflectionRecorded = true;
+          )
+          reflectionRecorded = true
           toolResults.push({
             type: 'tool_result',
             tool_use_id: toolBlock.id,
             content: JSON.stringify({ success: true }),
-          });
+          })
         } catch (err) {
           toolResults.push({
             type: 'tool_result',
@@ -174,7 +180,7 @@ export async function runReflectionTurn(
               error: err instanceof Error ? err.message : 'Unknown error',
             }),
             is_error: true,
-          });
+          })
         }
       }
     }
@@ -183,8 +189,8 @@ export async function runReflectionTurn(
       ...claudeMessages,
       { role: 'assistant' as const, content: response.content },
       { role: 'user' as const, content: toolResults },
-    ];
+    ]
   }
 
-  return { text: 'Thanks for sharing. This reflection has been recorded.', reflectionRecorded };
+  return { text: 'Thanks for sharing. This reflection has been recorded.', reflectionRecorded }
 }

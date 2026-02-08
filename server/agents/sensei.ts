@@ -7,10 +7,10 @@
  * a final text response.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
-import { buildSenseiContext } from './context';
-import { SENSEI_TOOLS, executeScheduleAction } from './tools';
-import type { Database } from '../db/index';
+import Anthropic from '@anthropic-ai/sdk'
+import type { Database } from '../db/index'
+import { buildSenseiContext } from './context'
+import { executeScheduleAction, SENSEI_TOOLS } from './tools'
 
 // ---------------------------------------------------------------------------
 // System prompt
@@ -98,21 +98,21 @@ When the user agrees to an action, use the schedule_action tool with:
 - Never reference the system goal or make the process feel transactional
 - Never lecture or moralize
 - Never reveal private inferences unless it would genuinely serve the user
-- Never schedule an action the user hasn't agreed to`;
+- Never schedule an action the user hasn't agreed to`
 
 // ---------------------------------------------------------------------------
 // Agent runner
 // ---------------------------------------------------------------------------
 
 interface AgentEnv {
-  ANTHROPIC_API_KEY: string;
-  GOOGLE_CLIENT_ID: string;
-  GOOGLE_CLIENT_SECRET: string;
+  ANTHROPIC_API_KEY: string
+  GOOGLE_CLIENT_ID: string
+  GOOGLE_CLIENT_SECRET: string
 }
 
 export interface SenseiResult {
-  text: string;
-  actions: Array<{ actionId: string; title: string }>;
+  text: string
+  actions: Array<{ actionId: string; title: string }>
 }
 
 /**
@@ -129,21 +129,21 @@ export async function runSenseiTurn(
   conversationMessages: Array<{ role: 'user' | 'assistant'; content: string }>,
   cfEnv: AgentEnv,
 ): Promise<SenseiResult> {
-  const client = new Anthropic({ apiKey: cfEnv.ANTHROPIC_API_KEY });
+  const client = new Anthropic({ apiKey: cfEnv.ANTHROPIC_API_KEY })
 
   // Build user context and prepend to system prompt
-  const context = await buildSenseiContext(db, userId);
+  const context = await buildSenseiContext(db, userId)
   const systemPrompt = context
     ? `${SENSEI_SYSTEM_PROMPT}\n\n---\n\n# USER CONTEXT\n\n${context}`
-    : SENSEI_SYSTEM_PROMPT;
+    : SENSEI_SYSTEM_PROMPT
 
-  const actions: Array<{ actionId: string; title: string }> = [];
+  const actions: Array<{ actionId: string; title: string }> = []
 
   // Build the messages array for Claude
   let claudeMessages: Anthropic.MessageParam[] = conversationMessages.map((m) => ({
     role: m.role,
     content: m.content,
-  }));
+  }))
 
   // Tool-use loop (max 3 iterations to prevent runaway)
   for (let i = 0; i < 3; i++) {
@@ -153,24 +153,30 @@ export async function runSenseiTurn(
       system: systemPrompt,
       tools: SENSEI_TOOLS,
       messages: claudeMessages,
-    });
+    })
 
     // Check if Claude wants to use a tool
     const toolUseBlocks = response.content.filter(
-      (block): block is Anthropic.ContentBlockParam & { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> } =>
-        block.type === 'tool_use',
-    );
+      (
+        block,
+      ): block is Anthropic.ContentBlockParam & {
+        type: 'tool_use'
+        id: string
+        name: string
+        input: Record<string, unknown>
+      } => block.type === 'tool_use',
+    )
 
     if (toolUseBlocks.length === 0) {
       // Final text response
       const textBlock = response.content.find(
         (block): block is Anthropic.TextBlock => block.type === 'text',
-      );
-      return { text: textBlock?.text ?? '', actions };
+      )
+      return { text: textBlock?.text ?? '', actions }
     }
 
     // Execute each tool call
-    const toolResults: Anthropic.ToolResultBlockParam[] = [];
+    const toolResults: Anthropic.ToolResultBlockParam[] = []
     for (const toolBlock of toolUseBlocks) {
       if (toolBlock.name === 'schedule_action') {
         try {
@@ -180,8 +186,11 @@ export async function runSenseiTurn(
             interactionId,
             toolBlock.input as unknown as Parameters<typeof executeScheduleAction>[3],
             cfEnv,
-          );
-          actions.push({ actionId: result.actionId, title: (toolBlock.input as { title: string }).title });
+          )
+          actions.push({
+            actionId: result.actionId,
+            title: (toolBlock.input as { title: string }).title,
+          })
           toolResults.push({
             type: 'tool_result',
             tool_use_id: toolBlock.id,
@@ -190,7 +199,7 @@ export async function runSenseiTurn(
               actionId: result.actionId,
               calendarEventId: result.calendarEventId,
             }),
-          });
+          })
         } catch (err) {
           toolResults.push({
             type: 'tool_result',
@@ -200,7 +209,7 @@ export async function runSenseiTurn(
               error: err instanceof Error ? err.message : 'Unknown error',
             }),
             is_error: true,
-          });
+          })
         }
       }
     }
@@ -210,9 +219,9 @@ export async function runSenseiTurn(
       ...claudeMessages,
       { role: 'assistant' as const, content: response.content },
       { role: 'user' as const, content: toolResults },
-    ];
+    ]
   }
 
   // If we exhaust the loop, return whatever text we have
-  return { text: 'I\'ve noted that down. Is there anything else you\'d like to explore?', actions };
+  return { text: "I've noted that down. Is there anything else you'd like to explore?", actions }
 }
