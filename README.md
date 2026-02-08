@@ -1,76 +1,78 @@
-# hacklahoma-dream-team
+# Sensei
 
-{{PROJECT_TAGLINE}}
+An AI-powered personal accountability coach that helps students identify meaningful areas for self-improvement, schedule concrete actions, and reflect on progress.
 
 ## Overview
 
-Competition entry and development workspace for Hacklahoma
+**Sensei** is a Hacklahoma competition entry that pairs users with a conversational AI mentor (powered by Claude) to set goals, create calendar commitments, and build lasting habits through guided reflection.
+
+### How It Works
+
+1. **Intake** -- An 11-step questionnaire captures the user's challenges, goals, learning style, and preferences to build a personalized coaching profile.
+2. **Sensei Session** -- A conversational agent asks "What's the one thing you'd like to do better?" and collaboratively identifies actionable next steps, scheduling them as Google Calendar events.
+3. **Reflection** -- After completing an action, users follow a calendar link to reflect on the experience with a dedicated reflection agent.
+4. **Follow-Up** -- A cron job checks for missed reflections and sends profile-aware reminders based on the user's notification preferences.
 
 ## Features
 
-- **{{FEATURE_1}}** - {{FEATURE_1_DESCRIPTION}}
-- **{{FEATURE_2}}** - {{FEATURE_2_DESCRIPTION}}
-- **{{FEATURE_3}}** - {{FEATURE_3_DESCRIPTION}}
-- **{{FEATURE_4}}** - {{FEATURE_4_DESCRIPTION}}
+- **Personalized Onboarding** -- Multi-step intake wizard that resolves a persona profile (Coach, Ignition, Pacer, Stabilizer, Adaptive)
+- **Conversational Goal-Setting** -- Claude-powered exploration without pressure or lectures
+- **Google Calendar Integration** -- Seamless event creation with embedded reflection links
+- **Automated Follow-Ups** -- Profile-respecting reminders for missed reflections
+- **Context Preservation** -- Full interaction history available to agents for continuity across sessions
+- **Dark Mode** -- Theme toggle with persistent preference
+
+## Tech Stack
+
+- **Frontend**: React 19, TanStack Start/Router, Tailwind CSS, Framer Motion
+- **Backend**: Cloudflare Workers, Cloudflare D1 (SQLite), Drizzle ORM
+- **AI**: Anthropic Claude (Sonnet 4.5)
+- **Auth**: Google OAuth 2.0 with HMAC-signed session cookies
+- **Calendar**: Google Calendar API
+- **Language**: TypeScript (strict mode), validated with Biome
+
+## Project Structure
+
+```
+hacklahoma-dream-team/
+├── app/                      # Frontend (React + TanStack Start)
+│   ├── components/           # UI components
+│   ├── contexts/             # Auth & intake state
+│   └── routes/               # Page routes (/, /chat, /dashboard, /intake, /profile)
+├── server/                   # Backend (Cloudflare Workers)
+│   ├── agents/               # Sensei & Reflection AI agents
+│   ├── auth/                 # Google OAuth flow
+│   ├── calendar/             # Google Calendar integration
+│   ├── cron/                 # Automated follow-up checks
+│   ├── db/                   # Drizzle schema & migrations
+│   └── routes/               # API endpoints
+├── shared/                   # Shared types & resolution logic
+├── config/                   # Configuration files
+├── scripts/                  # Utility and automation scripts
+└── tests/                    # Test suites
+```
 
 ## Quick Start
 
 ### Prerequisites
-- {{PREREQUISITE_1}}
-- {{PREREQUISITE_2}}
-- {{PREREQUISITE_3}}
+
+- Node.js 18+
+- Wrangler CLI (for Cloudflare Workers)
+- Google Cloud project with OAuth 2.0 and Calendar API enabled
+- Anthropic API key
 
 ### Installation
 
 ```bash
-{{INSTALLATION_COMMANDS}}
+npm install
 ```
 
-### Basic Usage
+### Development
 
-```{{LANGUAGE}}
-{{BASIC_USAGE_EXAMPLE}}
-```
-
-## Project Structure
 ```bash
-hacklahoma-dream-team/
-├── .archive/                 # Historical conversations and changelog
-│   ├── transcripts/          # Development conversation logs
-│   └── CHANGELOG.md          # Project change records
-├── .claude/                  # Claude Code configuration
-│   └── commands/             # Custom Claude Code commands
-├── .docs/                    # Documentation
-│   └── FULLSPEC.md           # Detailed specifications
-├── .references/              # Reference materials and frameworks
-├── config/                   # Configuration files
-├── scripts/                  # Utility and automation scripts
-├── src/                      # Source code
-├── tests/                    # Test suites
-├── .gitignore                # Git configuration
-├── CLAUDE.md                 # Project instructions
-└── README.md                 # Project overview
+npx wrangler dev
 ```
-## Development
-
-### Testing
-```bash
-{{TEST_COMMANDS}}
-```
-
-### Contributing
-{{CONTRIBUTING_GUIDELINES}}
-
-## Technology Stack
-
-- **{{TECH_CATEGORY_1}}**: {{TECH_LIST_1}}
-- **{{TECH_CATEGORY_2}}**: {{TECH_LIST_2}}
-- **{{TECH_CATEGORY_3}}**: {{TECH_LIST_3}}
 
 ## License
 
-{{LICENSE_INFORMATION}}
-
-## Contact
-
-{{CONTACT_INFORMATION}}
+See repository for license details.
