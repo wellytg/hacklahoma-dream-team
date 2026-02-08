@@ -94,8 +94,16 @@
 │     • Contains a hyperlink back into the app               │
 │     • Clicking the link auto-logs the user in              │
 │     • Triggers the Reflection Agent (Phase 3)              │
+│                    │                                       │
+│                    ▼                                       │
+│  6. Schedule a Follow-Up Check (SYSTEM-SIDE)               │
+│     Sensei schedules an INTERNAL system event (not a       │
+│     user calendar event) to verify reflection engagement:  │
+│     • Fires at: reflection_time + follow_up_delay          │
+│     • Triggers the Follow-Up Evaluation (Phase 4)          │
+│     • Invisible to the user                                │
 │                                                            │
-│     Both events saved to database interaction history.     │
+│     All events saved to database interaction history.      │
 │                                                            │
 │            ✅ SENSEI INTERACTION COMPLETE                   │
 └──────────────────────────────────────────────────────────┘
@@ -150,6 +158,115 @@
 
 ---
 
+### Phase 4: Follow-Up Evaluation (Missed Reflection Handling)
+
+**Goal**: Detect when a user does not engage with a scheduled reflection event, and respond in a way that is appropriate to the user's profile and preferences.
+
+**Rationale**: Without this mechanism, a missed reflection is a dead end — the system loses track of the user's trajectory. The follow-up ensures the feedback loop always closes, either through outreach or a passive record. Critically, the response strategy is profile-driven: some users benefit from a gentle nudge, while others would experience the same nudge as pestering. The system must respect this distinction.
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│              FOLLOW-UP EVALUATION PHASE                       │
+│                                                               │
+│  1. Sensei Follow-Up Check Fires                              │
+│     Internal system event triggers at                         │
+│     reflection_time + follow_up_delay                         │
+│                    │                                          │
+│                    ▼                                          │
+│  2. Query: Did the user engage with the reflection?           │
+│     Check database for a reflection record linked to          │
+│     this action's action_id                                   │
+│                    │                                          │
+│            ┌───────┴───────┐                                  │
+│            │               │                                  │
+│        [YES]           [NO]                                   │
+│            │               │                                  │
+│            ▼               ▼                                  │
+│     No action.      3. Load User Profile                      │
+│     Loop closes        • engagement_preferences               │
+│     normally.          • communication_style                  │
+│                        • avoidance_style                      │
+│                        • notification_tolerance               │
+│                              │                                │
+│                              ▼                                │
+│                   4. Profile-Based Strategy Selection          │
+│                      Route to the appropriate                 │
+│                      follow-up strategy                       │
+│                              │                                │
+│               ┌──────────────┼──────────────┐                 │
+│               │              │              │                 │
+│               ▼              ▼              ▼                 │
+│          [ACTIVE        [PASSIVE       [CUSTOM                │
+│          OUTREACH]       RECORD]       STRATEGY]              │
+│               │              │              │                 │
+│               ▼              ▼              ▼                 │
+│         See below.     See below.    See below.               │
+│                                                               │
+│  5. Log the follow-up outcome to interaction history          │
+│                                                               │
+│            ✅ FOLLOW-UP EVALUATION COMPLETE                    │
+└──────────────────────────────────────────────────────────────┘
+```
+
+#### Strategy A: Active Outreach
+
+**When it applies**: User profile indicates they respond well to external prompts, have opted into outreach channels (email, SMS, push), and their avoidance style suggests they benefit from gentle nudges.
+
+**What happens**:
+- The Sensei Agent composes a message calibrated by the user's profile:
+  - **Tone** — tough/direct, motivational, gentle, humorous, etc. — derived from `preferred_conversation_mode` and `communication_style`
+  - **Content** — references the specific action and reflection, not generic motivation; reinforces that the Sensei is a supportive presence, not a taskmaster
+  - **Channel** — email, SMS, or push notification, based on user preferences
+- The outreach event is logged to the user's interaction history
+
+**Example**: A user whose profile indicates they appreciate directness and humor might receive an email like: *"Hey — you had disc golf on the calendar yesterday. Did you make it out? Either way, I'd love to hear how things are going. Tap here to check in."*
+
+#### Strategy B: Passive Record
+
+**When it applies**: User profile indicates they dislike being hounded or reminded, their avoidance style suggests external pressure is counterproductive, or they have expressed a preference for autonomy.
+
+**What happens**:
+- A `missed_reflection` record is created in the database:
+  ```
+  action_id:         [reference to the original action]
+  reflection_status: missed
+  timestamp:         [when the follow-up check fired]
+  follow_up_taken:   passive_record
+  ```
+- **No outreach** is sent to the user
+- On the user's next self-initiated Sensei interaction, this record is pulled into the Sensei Agent's context, allowing it to address the missed reflection naturally (e.g., *"Last time you had planned to try disc golf — did you end up going?"*)
+
+#### Strategy C: Custom / Hybrid
+
+As the user's interaction history grows, the system can derive more nuanced strategies:
+- **Escalation patterns**: first miss → passive record; repeated misses → gentle outreach
+- **Time-of-day sensitivity**: don't send reminders at midnight
+- **Goal abandonment detection**: if the user has abandoned a goal area entirely, the Sensei may shift topics rather than re-prompting on a stale action
+
+#### Follow-Up Data Model
+
+```
+// Follow-up check record (added to interaction_history)
+{
+  type:              "follow_up_check"
+  action_id:         <ref to original scheduled action>
+  reflection_found:  boolean
+  strategy_applied:  "active_outreach" | "passive_record" | "custom"
+  outreach_channel:  "email" | "sms" | "push" | null
+  outreach_tone:     "tough" | "motivational" | "gentle" | "humorous" | null
+  timestamp:         <datetime>
+}
+
+// User profile fields supporting follow-up behavior
+{
+  notification_tolerance:  "high" | "medium" | "low"
+  preferred_outreach:      ["email", "sms", "push"]
+  nudge_preference:        "active" | "passive" | "escalating"
+}
+```
+
+---
+
 ### Overall Data Flow
 
 ```
@@ -158,14 +275,31 @@
 │  PROCESS │    │INTERACTION│    │   ACTION   │    │   PHASE    │
 └─────────┘    └───────────┘    └────────────┘    └────────────┘
      │               │                                   │
-     ▼               ▼                                   ▼
-┌──────────────────────────────────────────────────────────────┐
-│                     USER DATABASE                             │
-│  • User Profile                                               │
-│  • Interaction History (all conversations)                    │
-│  • Scheduled Actions (calendar events)                        │
-│  • Reflection Records                                         │
-└──────────────────────────────────────────────────────────────┘
+     │               │                              ┌────┴────┐
+     │               │                              │         │
+     │               │                           [done]   [missed]
+     │               │                              │         │
+     │               │                              │         ▼
+     │               │                              │  ┌────────────┐
+     │               │                              │  │ FOLLOW-UP  │
+     │               │                              │  │ EVALUATION │
+     │               │                              │  └─────┬──────┘
+     │               │                              │        │
+     │               │                              │   ┌────┴────┐
+     │               │                              │   │         │
+     │               │                              │ [active] [passive]
+     │               │                              │ outreach  record
+     │               │                              │   │         │
+     ▼               ▼                              ▼   ▼         ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                        USER DATABASE                              │
+│  • User Profile (incl. notification & nudge preferences)         │
+│  • Interaction History (all conversations)                       │
+│  • Scheduled Actions (calendar events)                           │
+│  • Reflection Records                                            │
+│  • Follow-Up Check Records                                       │
+│  • Missed Reflection Records                                     │
+└──────────────────────────────────────────────────────────────────┘
          │
          ▼
    Feeds back into future Sensei interactions
@@ -256,6 +390,10 @@ When the user agrees to an action:
    - Include a hyperlink that brings the user back into the app
    - Timing should feel natural (e.g., the morning after a sleep goal,
      or shortly after a study session)
+3. Schedule a FOLLOW-UP CHECK (internal system event, invisible to user):
+   - Fires at reflection_time + follow_up_delay
+   - Checks whether the user engaged with the reflection
+   - If not, executes a profile-based follow-up strategy (see Phase 4)
 
 ### Conversation Examples
 
