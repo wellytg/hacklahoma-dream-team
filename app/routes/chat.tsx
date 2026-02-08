@@ -1,15 +1,219 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useSearch } from '@tanstack/react-router'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Send, Loader2, CalendarCheck } from 'lucide-react'
+import { startSession, sendMessage } from '../../server/routes/chat'
+import type { ChatMessage } from '../../shared/types'
+
+interface ChatSearch {
+  mode?: 'reflection'
+  action?: string
+}
 
 export const Route = createFileRoute('/chat')({
   component: ChatPage,
+  validateSearch: (search: Record<string, unknown>): ChatSearch => ({
+    mode: search.mode === 'reflection' ? 'reflection' : undefined,
+    action: typeof search.action === 'string' ? search.action : undefined,
+  }),
 })
 
 function ChatPage() {
+  const search = useSearch({ from: '/chat' })
+  const isReflection = search.mode === 'reflection'
+  const actionId = search.action
+
+  const [msgs, setMsgs] = useState<ChatMessage[]>([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [interactionId, setInteractionId] = useState<string | null>(null)
+  const [scheduledActions, setScheduledActions] = useState<Array<{ title: string }>>([])
+
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [msgs, loading])
+
+  // Initialize session on mount
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const mode = isReflection ? 'reflection' : 'sensei_session'
+        const result = await startSession({ data: { mode, actionId } })
+        setInteractionId(result.interactionId)
+      } catch {
+        // If auth fails, could redirect — for now just log
+        console.error('Failed to start session')
+      }
+    }
+    init()
+  }, [isReflection, actionId])
+
+  const handleSend = useCallback(async () => {
+    const text = input.trim()
+    if (!text || !interactionId || loading) return
+
+    // Optimistically add the user message
+    const userMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: text,
+      createdAt: new Date().toISOString(),
+    }
+    setMsgs((prev) => [...prev, userMsg])
+    setInput('')
+    setLoading(true)
+
+    try {
+      const result = await sendMessage({
+        data: { interactionId, content: text, actionId },
+      })
+      setMsgs((prev) => [...prev, result.message])
+
+      if (result.actions && result.actions.length > 0) {
+        setScheduledActions((prev) => [...prev, ...result.actions])
+      }
+    } catch {
+      // Show error as a system message
+      setMsgs((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'system',
+          content: 'Something went wrong. Please try again.',
+          createdAt: new Date().toISOString(),
+        },
+      ])
+    } finally {
+      setLoading(false)
+      inputRef.current?.focus()
+    }
+  }, [input, interactionId, loading, actionId])
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
   return (
-    <div className="min-h-screen py-12 px-6">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-serif font-light text-stone-800 mb-6">Sensei</h1>
-        <p className="text-stone-500">Chat interface will be implemented in Phase 2 (WS-D).</p>
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="border-b border-stone-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-serif font-light text-stone-800">
+              {isReflection ? 'Reflection' : 'Sensei'}
+            </h1>
+            {isReflection && (
+              <p className="text-xs text-stone-400 mt-0.5">Reflecting on your action</p>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-6 py-8 space-y-4">
+          {msgs.length === 0 && !loading && (
+            <p className="text-stone-400 text-center py-12 font-light">
+              {interactionId
+                ? 'Send a message to begin.'
+                : 'Starting session...'}
+            </p>
+          )}
+
+          <AnimatePresence mode="popLayout">
+            {msgs.map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                    msg.role === 'user'
+                      ? 'bg-stone-800 text-white'
+                      : msg.role === 'system'
+                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                        : 'bg-white text-stone-700 border border-stone-200'
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {/* Scheduled action confirmations */}
+          <AnimatePresence>
+            {scheduledActions.map((action, i) => (
+              <motion.div
+                key={`action-${i}`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-start"
+              >
+                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-2xl px-4 py-3 text-sm">
+                  <CalendarCheck className="w-4 h-4 shrink-0" />
+                  <span>Scheduled: {action.title}</span>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {/* Loading indicator */}
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex justify-start"
+            >
+              <div className="bg-white border border-stone-200 rounded-2xl px-4 py-3">
+                <Loader2 className="w-4 h-4 animate-spin text-stone-400" />
+              </div>
+            </motion.div>
+          )}
+
+          <div ref={bottomRef} />
+        </div>
+      </div>
+
+      {/* Input */}
+      <div className="border-t border-stone-200 bg-white/80 backdrop-blur-sm sticky bottom-0">
+        <div className="max-w-3xl mx-auto px-6 py-4">
+          <div className="flex items-end gap-3">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message..."
+              rows={1}
+              disabled={!interactionId || loading}
+              className="flex-1 resize-none rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300 disabled:opacity-50"
+              style={{ minHeight: '44px', maxHeight: '120px' }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement
+                target.style.height = 'auto'
+                target.style.height = `${Math.min(target.scrollHeight, 120)}px`
+              }}
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || !interactionId || loading}
+              className="shrink-0 rounded-xl bg-stone-800 p-3 text-white hover:bg-stone-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

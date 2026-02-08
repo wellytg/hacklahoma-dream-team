@@ -122,3 +122,29 @@ export interface ChatMessage {
   content: string;
   createdAt: string;
 }
+
+// --- Scheduled Actions ---
+
+export interface ScheduledAction {
+  id: string;
+  title: string;
+  description: string | null;
+  scheduledAt: string;
+  durationMinutes: number | null;
+  goalArea: string | null;
+  status: string | null;
+  reflectionScheduledAt: string | null;
+}
+
+// --- Reflection Records ---
+
+export interface ReflectionRecord {
+  id: string;
+  actionId: string;
+  completed: string;
+  userSummary: string | null;
+  barriers: string | null;
+  emotionalTone: string | null;
+  wantsToRepeat: string | null;
+  createdAt: string | null;
+}
