@@ -22,6 +22,16 @@ llm-dev guidance:
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-02-09
+**Conversation**: 007 - Clickable Dashboard Actions to Google Calendar
+**Transcript**: [20260209-clickable-dashboard-actions-to-google-calendar.json](transcripts/20260209-clickable-dashboard-actions-to-google-calendar.json)
+### Changed
+- Updated schema.ts
+- Updated types.ts
+- Updated tools.ts
+- Updated chat.ts
+- Updated dashboard.tsx
+
 ## [1.0.6] - 2026-02-08
 **Conversation**: 006 - Six Features: Calendar Sync, Dark Mode, Agent Intelligence
 **Transcript**: [20260208-six-features-calendar-sync-dark-mode-agent-intelligence.json](transcripts/20260208-six-features-calendar-sync-dark-mode-agent-intelligence.json)
